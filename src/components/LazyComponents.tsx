@@ -4,7 +4,6 @@ import { lazy } from 'react';
 // Lazy load less critical pages
 export const LazyDashboard = lazy(() => import('../pages/Dashboard'));
 export const LazyIssue = lazy(() => import('../pages/Issue'));
-export const LazyJudgeMode = lazy(() => import('../pages/JudgeMode'));
 export const LazyContracts = lazy(() => import('../pages/Contracts'));
 export const LazyDocs = lazy(() => import('../pages/Docs'));
 export const LazyDoc = lazy(() => import('../pages/Doc'));
@@ -16,3 +15,4 @@ export { default as Attestations } from '../pages/Attestations';
 export { default as Home } from '../pages/Home';
 export { default as NotFound } from '../pages/NotFound';
 export { default as Product } from '../pages/Product';
+

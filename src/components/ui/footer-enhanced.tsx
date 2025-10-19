@@ -15,8 +15,7 @@ const footerLinks = {
   product: [
     { name: "Attestations", href: "/attestations" },
     { name: "Dashboard", href: "/dashboard" },
-    { name: "Contracts", href: "/contracts" },
-    { name: "Judge Mode", href: "/demo" }
+    { name: "Contracts", href: "/contracts" }
   ],
   developers: [
     { name: "Documentation", href: "/docs" },

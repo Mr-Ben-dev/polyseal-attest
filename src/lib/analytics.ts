@@ -117,12 +117,6 @@ export const analytics = {
   copyContract: (contract: string) => trackEvent('copy_contract', { contract }),
   copyToClipboard: (type: string) => trackEvent('copy_to_clipboard', { type }),
   
-  // Judge mode / Demo
-  viewJudgeMode: () => trackEvent('view_judge_mode'),
-  tryDemoUID: (uid: string) => trackEvent('try_demo_uid', { 
-    uid: uid.slice(0, 10) + '...'
-  }),
-  
   // External links
   openExternalLink: (url: string, context: string) => trackEvent('open_external_link', { 
     domain: new URL(url).hostname,

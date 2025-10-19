@@ -41,13 +41,6 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link 
-              to="/demo" 
-              className="px-3 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <span className="text-xs">🎯</span>
-              Judge Mode
-            </Link>
             <ConnectButton />
           </div>
         </div>

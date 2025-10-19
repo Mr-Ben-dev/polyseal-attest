@@ -78,11 +78,11 @@ export default function Attestations() {
   useEffect(() => {
     analytics.viewAttestations();
     
-    // Check for pre-filled UID from URL parameters (from Judge Mode)
+    // Check for pre-filled UID from URL parameters
     const urlUid = searchParams.get('uid');
     if (urlUid) {
       setUid(urlUid);
-      // Automatically trigger lookup for demo UIDs
+      // Automatically trigger lookup for provided UIDs
       lookup.mutate(urlUid);
     }
   }, [searchParams, lookup]);

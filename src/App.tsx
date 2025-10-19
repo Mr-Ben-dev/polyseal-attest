@@ -4,18 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 import {
-  Attestations,
-  Home,
-  NotFound,
-  Product,
-  LazyContact,
-  LazyContracts,
-  LazyDashboard,
-  LazyDoc,
-  LazyDocs,
-  LazyIssue,
-  LazyJudgeMode,
-  LazyLegal
+    Attestations,
+    Home,
+    LazyContact,
+    LazyContracts,
+    LazyDashboard,
+    LazyDoc,
+    LazyDocs,
+    LazyIssue,
+    LazyLegal,
+    NotFound,
+    Product
 } from "./components/LazyComponents";
 import AppShell from "./shell/AppShell";
 
@@ -41,7 +40,6 @@ const App = () => (
           <Route path="/docs/:slug" element={<LazyDoc />} />
           <Route path="/dashboard" element={<LazyDashboard />} />
           <Route path="/issue" element={<LazyIssue />} />
-          <Route path="/demo" element={<LazyJudgeMode />} />
           <Route path="/contact" element={<LazyContact />} />
           <Route path="/privacy" element={<LazyLegal kind="privacy" />} />
           <Route path="/terms" element={<LazyLegal kind="terms" />} />
