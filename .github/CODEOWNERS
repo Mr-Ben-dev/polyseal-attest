@@ -1,0 +1,23 @@
+# Code Owners for Polyseal
+
+# Default owners for everything in the repo
+* @yourusername
+
+# Frontend components
+/src/components/ @yourusername
+/src/pages/ @yourusername
+/src/ui/ @yourusername
+
+# Backend API
+/api/ @yourusername
+
+# Configuration
+/.github/ @yourusername
+/vercel.json @yourusername
+/vite.config.ts @yourusername
+/tailwind.config.ts @yourusername
+
+# Documentation
+/README.md @yourusername
+/CONTRIBUTING.md @yourusername
+/docs/ @yourusername

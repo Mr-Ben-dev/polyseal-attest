@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Shield } from 'lucide-react';
+import polyseaLogo from '@/assets/polyseal-logo.png';
 
 export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 glass-card border-b border-border">
       <div className="container">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-            <Shield className="w-6 h-6 text-primary" />
+          <Link to="/" className="flex items-center gap-3 text-xl font-bold group">
+            <img 
+              src={polyseaLogo} 
+              alt="Polyseal" 
+              className="w-8 h-8 transition-transform duration-300 group-hover:scale-110" 
+            />
             <span className="text-gradient">Polyseal</span>
           </Link>
           

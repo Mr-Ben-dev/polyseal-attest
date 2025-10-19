@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 
 interface SEOProps {
   title?: string;
@@ -8,36 +8,31 @@ interface SEOProps {
 }
 
 export default function SEO({
-  title = 'Polyseal — On-chain attestations made simple',
-  description = 'Read and verify EAS attestations, connect wallets, and integrate Polyseal on Polygon. Attestations, identity, and on-chain trust.',
+  title,
+  description,
   path = '',
-  image = 'https://polyseal.vercel.app/og.png',
+  image,
 }: SEOProps) {
   const base = 'https://polyseal.vercel.app';
+  const t = title ?? 'Polyseal — Attestations, identity, and on-chain trust';
+  const d = description ?? 'Build trust on Polygon with EAS attestations. Developer infrastructure for on-chain identity, credentials, and verifiable data.';
   const url = `${base}${path}`;
+  const img = image ?? `${base}/og.png`;
 
-  useEffect(() => {
-    document.title = title;
-    
-    const updateMeta = (selector: string, content: string) => {
-      let meta = document.querySelector(selector);
-      if (!meta) {
-        meta = document.createElement('meta');
-        const attr = selector.includes('property') ? 'property' : 'name';
-        meta.setAttribute(attr, selector.split(/[[\]]/)[1]);
-        document.head.appendChild(meta);
-      }
-      meta.setAttribute('content', content);
-    };
-
-    updateMeta('meta[name="description"]', description);
-    updateMeta('meta[property="og:title"]', title);
-    updateMeta('meta[property="og:description"]', description);
-    updateMeta('meta[property="og:image"]', image);
-    updateMeta('meta[property="og:url"]', url);
-    updateMeta('meta[name="twitter:title"]', title);
-    updateMeta('meta[name="twitter:description"]', description);
-  }, [title, description, url, image]);
-
-  return null;
+  return (
+    <Helmet>
+      <title>{t}</title>
+      <meta name="description" content={d} />
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={t} />
+      <meta property="og:description" content={d} />
+      <meta property="og:image" content={img} />
+      <meta property="og:url" content={url} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={t} />
+      <meta name="twitter:description" content={d} />
+      <meta name="twitter:image" content={img} />
+      <link rel="canonical" href={url} />
+    </Helmet>
+  );
 }

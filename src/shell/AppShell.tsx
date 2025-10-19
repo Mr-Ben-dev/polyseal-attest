@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import Navbar from '@/ui/Navbar';
 import Footer from '@/ui/Footer';
+import { NetworkGuard } from '@/components/NetworkGuard';
 
 interface AppShellProps {
   children: ReactNode;
@@ -8,10 +10,13 @@ interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </div>
+    <HelmetProvider>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <NetworkGuard />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </div>
+    </HelmetProvider>
   );
 }

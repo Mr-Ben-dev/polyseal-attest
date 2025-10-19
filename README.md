@@ -1,73 +1,180 @@
-# Welcome to your Lovable project
+# Polyseal 🔒
 
-## Project info
+> Developer infrastructure for on-chain attestations, identity, and trust on Polygon
 
-**URL**: https://lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6
+[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://polyseal.vercel.app)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## How can I edit this code?
+Polyseal is a production-ready developer platform built on Ethereum Attestation Service (EAS) for Polygon. Build verifiable credentials, on-chain identity systems, and trust infrastructure with ease.
 
-There are several ways of editing your application.
+## 🚀 Live Links
 
-**Use Lovable**
+- **Production Site**: [polyseal.vercel.app](https://polyseal.vercel.app)
+- **Documentation**: [polyseal.vercel.app/docs](https://polyseal.vercel.app/docs)
+- **API**: [polyseal.vercel.app/api](https://polyseal.vercel.app/api)
+- **Lovable Project**: [lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6](https://lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6) and start prompting.
+## ✨ Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🔐 **Wallet Integration**: Seamless wallet connection with RainbowKit (MetaMask, Rainbow, Coinbase Wallet)
+- 📜 **Attestation Lookup**: Read and verify EAS attestations on Polygon Amoy testnet
+- 🗂️ **Schema Registry**: Query and explore attestation schemas
+- 📊 **Dashboard**: View your attestations and manage on-chain credentials
+- 📚 **MDX Documentation**: Interactive developer guides
+- 🎨 **Modern UI**: Glassmorphism design with smooth animations
+- 📈 **Analytics**: PostHog event tracking and Sentry error monitoring
+- 🔒 **Security**: Rate limiting, CORS protection, and secure API endpoints
 
-**Use your preferred IDE**
+## 🏗️ Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React 18** + **TypeScript** + **Vite**
+- **Tailwind CSS** for styling with custom design system
+- **Framer Motion** for animations
+- **shadcn/ui** component library
+- **RainbowKit** + **Wagmi** + **Viem** for Web3 integration
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend
+- **Vercel Serverless Functions**
+- **Polygon Amoy** testnet (EAS v1.3.0)
+- **PostHog** for analytics
+- **Sentry** for error tracking
 
-Follow these steps:
+### Infrastructure
+- **Ethereum Attestation Service (EAS)**: On-chain attestation protocol
+- **Polygon Amoy**: Testnet for development
+- **Vercel**: Hosting and deployment
+- **WalletConnect**: Multi-wallet support
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+## 📦 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- A WalletConnect Project ID ([get one here](https://cloud.walletconnect.com))
+
+### Installation
+
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd polyseal
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Copy environment variables
+cp .env.example .env
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be running at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🔧 Environment Variables
 
-**Use GitHub Codespaces**
+### Required (Client-side)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_WALLETCONNECT_PROJECT_ID` | WalletConnect Cloud project ID | `abc123...` |
+| `VITE_RPC_URL` | Polygon Amoy RPC endpoint | `https://rpc-amoy.polygon.technology` |
+| `VITE_EAS_ADDRESS` | EAS contract address | `0xb101...` |
+| `VITE_SCHEMA_REGISTRY` | Schema Registry address | `0x23c5...` |
 
-## What technologies are used for this project?
+### Optional (Analytics & Monitoring)
 
-This project is built with:
+| Variable | Description |
+|----------|-------------|
+| `VITE_POSTHOG_KEY` | PostHog project API key |
+| `VITE_SENTRY_DSN` | Sentry project DSN |
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Server-only
 
-## How can I deploy this project?
+| Variable | Description |
+|----------|-------------|
+| `POLYGON_RPC_URL` | Backend RPC URL |
+| `SLACK_WEBHOOK_URL` | Contact form notifications |
+| `COINGECKO_API_KEY` | Price API access |
+| `CORS_ORIGIN` | Allowed origin for API |
 
-Simply open [Lovable](https://lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6) and click on Share -> Publish.
+See `.env.example` for complete list.
 
-## Can I connect a custom domain to my Lovable project?
+## 📖 Documentation
 
-Yes, you can!
+Visit our [documentation site](https://polyseal.vercel.app/docs) for:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- **Getting Started**: Set up your first attestation
+- **Environment Setup**: Configure your development environment
+- **API Reference**: Complete API documentation
+- **Security**: Best practices and security guidelines
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🎥 Demo Video
+
+Watch our 2-minute demo: [Coming soon]
+
+## 🏛️ Contract Addresses (Polygon Amoy)
+
+- **EAS**: `0xb101275a60d8bfb14529C421899aD7CA1Ae5B5Fc`
+- **Schema Registry**: `0x23c5701A1BDa89C61d181BD79E5203c730708AE7`
+- **Polyseal Schema**: `0x27d06e3659317e9a4f8154d1e849eb53d43d91fb4f219884d1684f86d797804a`
+- **SessionPay**: `0xE23EF3e9A5903cB8F68334FCAfDb89d50541d235`
+- **Mock USDC**: `0xcF28F960aA85b051D030374B1ACd14668abaAf3e`
+
+## 📊 Success Metrics
+
+Track key metrics in PostHog:
+- Unique visitors
+- Wallets connected
+- Schema reads / attestation lookups
+- Contact form submissions
+- Error rates
+
+## 🛠️ Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Commit: `git commit -m 'Add amazing feature'`
+5. Push: `git push origin feature/amazing-feature`
+6. Open a Pull Request
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [Website](https://polyseal.vercel.app)
+- [Documentation](https://polyseal.vercel.app/docs)
+- [GitHub](https://github.com/yourusername/polyseal)
+- [Twitter](https://twitter.com/polyseal)
+
+## 📧 Contact
+
+For questions or partnerships, visit our [contact page](https://polyseal.vercel.app/contact).
+
+## 🙏 Acknowledgments
+
+- [Ethereum Attestation Service](https://attest.sh) for the attestation protocol
+- [Polygon](https://polygon.technology) for the blockchain infrastructure
+- [shadcn/ui](https://ui.shadcn.com) for the beautiful component library
+- [RainbowKit](https://rainbowkit.com) for wallet connectivity
+
+---
+
+Built with ❤️ by the Polyseal team
