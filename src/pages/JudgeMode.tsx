@@ -67,20 +67,25 @@ export default function JudgeMode() {
               Test Polyseal with pre-selected attestation UIDs. Click any example to see how the system handles different scenarios.
             </p>
             
-            {/* Warning Banner */}
+            {/* Info Banner */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 text-amber-800"
+              className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-blue-800"
             >
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="w-5 h-5" />
-                <span className="font-semibold">Demo Mode</span>
+                <span className="font-semibold">Interactive Demo</span>
               </div>
-              <p className="text-sm">
-                These are sample UIDs for testing purposes. Some may not exist on the Polygon Amoy testnet and will demonstrate error handling.
+              <p className="text-sm mb-2">
+                These test cases demonstrate different scenarios you might encounter when working with EAS attestations:
               </p>
+              <ul className="text-sm space-y-1 ml-4">
+                <li>• <strong>Edge Cases:</strong> Test boundary conditions and special scenarios</li>
+                <li>• <strong>Error Cases:</strong> See how the system handles invalid or non-existent UIDs</li>
+                <li>• <strong>Real Data:</strong> Interact with actual blockchain data from Polygon Amoy</li>
+              </ul>
             </motion.div>
           </div>
 
@@ -96,7 +101,7 @@ export default function JudgeMode() {
                 key={category.key}
                 variant={selectedCategory === category.key ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setSelectedCategory(category.key as any)}
+                onClick={() => setSelectedCategory(category.key as 'all' | 'valid' | 'invalid' | 'edge-case')}
                 className="text-sm"
               >
                 {category.label} ({category.count})

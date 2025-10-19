@@ -54,7 +54,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       args: [uid as `0x${string}`],
     });
 
-    res.status(200).json(data);
+    // Convert BigInt values to strings for JSON serialization
+    const serializedData = JSON.parse(JSON.stringify(data, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
+    ));
+
+    res.status(200).json(serializedData);
   } catch (error) {
     console.error('EAS lookup error:', error);
     res.status(404).json({ error: 'attestation_not_found' });

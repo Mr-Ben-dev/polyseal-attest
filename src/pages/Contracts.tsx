@@ -28,8 +28,10 @@ export default function Contracts() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const copyABI = (abi: any, name: string) => {
-    navigator.clipboard.writeText(JSON.stringify(abi, null, 2));
+  const copyABI = (abi: unknown[], name: string) => {
+    navigator.clipboard.writeText(JSON.stringify(abi, (key, value) => 
+      typeof value === 'bigint' ? value.toString() : value, 2
+    ));
     toast({
       title: 'ABI Copied!',
       description: `${name} ABI copied to clipboard`,
@@ -47,8 +49,8 @@ export default function Contracts() {
     const { data, error, isLoading, refetch } = useReadContract({
       address: contract.address as `0x${string}`,
       abi: contract.abi || [],
-      functionName: selectedFunction as any,
-      args: testParams as any,
+      functionName: selectedFunction,
+      args: testParams as readonly unknown[],
       query: { enabled: false }
     });
 
@@ -127,7 +129,9 @@ export default function Contracts() {
                   <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                     <Label className="text-xs text-green-700">Result:</Label>
                     <pre className="text-sm text-green-800 mt-1 whitespace-pre-wrap">
-                      {JSON.stringify(data, null, 2)}
+                      {JSON.stringify(data, (key, value) => 
+                        typeof value === 'bigint' ? value.toString() : value, 2
+                      )}
                     </pre>
                   </div>
                 )}

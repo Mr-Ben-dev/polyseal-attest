@@ -27,14 +27,29 @@ export default function Attestations() {
       analytics.lookupAttestation(attestationUid);
       
       try {
-        const response = await fetch(`/api/eas/${attestationUid}`);
+        const response = await fetch(`/api/eas/${encodeURIComponent(attestationUid)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
         if (!response.ok) {
-          const error = new Error('Attestation not found');
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          const error = new Error(errorData.error || `HTTP ${response.status}`);
           analytics.lookupError(attestationUid, error.message);
           throw error;
         }
         
         const data = await response.json();
+        
+        // Check if we got valid attestation data
+        if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+          const error = new Error('No attestation data found');
+          analytics.lookupError(attestationUid, error.message);
+          throw error;
+        }
+        
         analytics.lookupSuccess(attestationUid);
         return data;
       } catch (error) {

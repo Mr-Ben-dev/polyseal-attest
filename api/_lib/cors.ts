@@ -2,10 +2,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export function cors(req: VercelRequest, res: VercelResponse): boolean {
   const requestOrigin = req.headers.origin;
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+  
+  // Handle multiple possible env var names for allowed origins
+  const corsOriginEnv = process.env.CORS_ORIGIN || process.env.ALLOWED_ORIGINS || '';
+  const allowedOrigins = corsOriginEnv
     .split(',')
     .map(s => s.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter(origin => !origin.startsWith('ALLOWED_ORIGINS=')); // Filter out malformed env
   
   // Determine which origin to allow
   let allowOrigin = '*';
