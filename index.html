@@ -8,18 +8,43 @@
     <title>Polyseal — Attestations, identity, and on-chain trust</title>
     <meta name="description" content="Build trust on Polygon with EAS attestations. Developer infrastructure for on-chain identity, credentials, and verifiable data." />
     <meta name="author" content="Polyseal" />
+    <!-- Preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://rpc-amoy.polygon.technology">
+    <link rel="preconnect" href="https://api.studio.thegraph.com">
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 
+    <!-- Open Graph / Facebook -->
     <meta property="og:title" content="Polyseal — On-chain attestations made simple" />
     <meta property="og:description" content="Read and verify EAS attestations, connect wallets, and integrate Polyseal on Polygon." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://polyseal.vercel.app/og.png" />
+    <meta property="og:url" content="https://polyseal-jade.vercel.app/" />
+    <meta property="og:image" content="https://polyseal-jade.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Polyseal - On-chain attestations made simple" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Polyseal — On-chain attestations made simple" />
     <meta name="twitter:description" content="Read and verify EAS attestations on Polygon." />
+    <meta name="twitter:image" content="https://polyseal-jade.vercel.app/og.png" />
+    
+    <!-- Additional SEO -->
+    <meta name="keywords" content="EAS, attestations, Polygon, Web3, blockchain, identity, verification, Amoy" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://polyseal-jade.vercel.app/" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Polyseal" />
   </head>
 
   <body>

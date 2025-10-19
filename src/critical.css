@@ -1,0 +1,79 @@
+/* Critical CSS - Above the fold styles */
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  color: rgb(9, 9, 11);
+  background-color: rgb(255, 255, 255);
+}
+
+.dark body {
+  color: rgb(250, 250, 250);
+  background-color: rgb(9, 9, 11);
+}
+
+/* Header and navigation critical styles */
+.header {
+  border-bottom: 1px solid rgb(229, 231, 235);
+  background-color: rgb(255, 255, 255);
+}
+
+.dark .header {
+  border-bottom-color: rgb(39, 39, 42);
+  background-color: rgb(9, 9, 11);
+}
+
+/* Button styles for above-the-fold CTAs */
+.btn-primary {
+  background-color: rgb(37, 99, 235);
+  color: rgb(255, 255, 255);
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: rgb(29, 78, 216);
+}
+
+/* Loading spinner for better perceived performance */
+.spinner {
+  border: 2px solid rgb(243, 244, 246);
+  border-top: 2px solid rgb(37, 99, 235);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Skip link for accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: rgb(37, 99, 235);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 6px;
+}

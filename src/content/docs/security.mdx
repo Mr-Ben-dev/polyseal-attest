@@ -1,0 +1,451 @@
+# Security Guide
+
+This guide covers security best practices, threat models, and secure configuration for Polyseal deployments.
+
+## Security Overview
+
+Polyseal is designed with security-first principles:
+
+- **Client-side**: Wallet signatures, read-only operations, secure environment handling
+- **Server-side**: Rate limiting, CORS protection, input validation
+- **Infrastructure**: Vercel security, environment isolation, secret management
+
+## Threat Model
+
+### Assets We Protect
+
+1. **User Wallets**: Private keys never leave user's wallet
+2. **API Integrity**: Prevent abuse and ensure reliable service
+3. **User Data**: Contact form submissions and analytics
+4. **Service Availability**: Protect against DoS and spam
+
+### Attack Vectors
+
+1. **Frontend**: XSS, CSRF, malicious wallet connections
+2. **API**: Rate limiting bypass, injection attacks, CORS violations
+3. **Infrastructure**: Environment variable exposure, dependency vulnerabilities
+
+---
+
+## Frontend Security
+
+### Wallet Connection Security
+
+**Private Key Protection**
+
+- Private keys never transmitted or stored by Polyseal
+- All transactions signed client-side in user's wallet
+- RainbowKit provides secure wallet abstraction
+
+```typescript
+// ✅ Secure: User signs in their wallet
+const { writeContract } = useWriteContract();
+writeContract({
+  address: EAS_CONTRACT,
+  abi: EAS_ABI,
+  functionName: "attest",
+  args: [attestationData],
+});
+
+// ❌ Never do: Handle private keys directly
+// const privateKey = "0x..."; // NEVER!
+```
+
+**Network Verification**
+
+```typescript
+// Always verify user is on correct network
+const { chainId } = useAccount();
+const isCorrectNetwork = chainId === ENV.CHAIN_ID; // 80002 for Amoy
+
+if (!isCorrectNetwork) {
+  // Show network switch prompt
+  return <NetworkMismatchBanner />;
+}
+```
+
+### Content Security Policy
+
+Recommended CSP headers for production:
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data: https:;
+  connect-src 'self' https://*.polygon.technology https://*.walletconnect.com wss://*.walletconnect.com https://api.studio.thegraph.com;
+```
+
+### Environment Variables
+
+**Safe for Client (VITE\_ prefix)**:
+
+```bash
+VITE_CHAIN_ID=80002                    # ✅ Public chain ID
+VITE_RPC_URL=https://rpc-amoy.polygon.technology  # ✅ Public RPC endpoint
+VITE_EAS_ADDRESS=0xb101275a60d8bfb14529C421899aD7CA1Ae5B5Fc  # ✅ Public contract
+```
+
+**Never Expose to Client**:
+
+```bash
+JWT_SECRET=your_secret                 # ❌ Server-only secrets
+DATABASE_URL=postgresql://...          # ❌ Database credentials
+PRIVATE_KEY=0x...                      # ❌ Never store private keys
+COINGECKO_API_KEY=your_key            # ❌ API keys
+```
+
+---
+
+## API Security
+
+### Rate Limiting
+
+Polyseal implements rate limiting to prevent abuse:
+
+```typescript
+// api/_lib/rate.ts
+export function rate(req: VercelRequest, res: VercelResponse): boolean {
+  const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || 900000; // 15 minutes
+  const maxRequests = Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
+
+  // Rate limiting logic per IP
+  if (isRateLimited(getClientIP(req), windowMs, maxRequests)) {
+    res.status(429).json({ error: "Too many requests" });
+    return true;
+  }
+  return false;
+}
+```
+
+**Configuration**:
+
+- **Window**: 15 minutes (adjustable)
+- **Limit**: 100 requests per IP per window
+- **Storage**: In-memory (resets on deploy)
+
+### CORS Protection
+
+Strict CORS policy prevents unauthorized cross-origin requests:
+
+```typescript
+// api/_lib/cors.ts
+export function cors(req: VercelRequest, res: VercelResponse): boolean {
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // Only allow requests from configured origins
+  const requestOrigin = req.headers.origin;
+  let allowOrigin = "*";
+
+  if (requestOrigin && allowedOrigins.length > 0) {
+    allowOrigin = allowedOrigins.includes(requestOrigin)
+      ? requestOrigin
+      : allowedOrigins[0];
+  }
+
+  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  // ... additional CORS headers
+}
+```
+
+**Production Configuration**:
+
+```bash
+ALLOWED_ORIGINS=https://polyseal-jade.vercel.app
+```
+
+**Development Configuration**:
+
+```bash
+ALLOWED_ORIGINS=https://polyseal-jade.vercel.app,http://localhost:5173
+```
+
+### Input Validation
+
+All API endpoints validate inputs to prevent injection attacks:
+
+```typescript
+// Contact form validation
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (cors(req, res)) return;
+  if (rate(req, res)) return;
+
+  const { name, email, message } = await readBody(req);
+
+  // Validate required fields
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "missing_fields" });
+  }
+
+  // Validate email format
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "invalid_email" });
+  }
+
+  // Sanitize inputs (prevent XSS in admin notifications)
+  const sanitized = {
+    name: name.substring(0, 100),
+    email: email.substring(0, 100),
+    message: message.substring(0, 1000),
+  };
+
+  // Process safely...
+}
+```
+
+---
+
+## Infrastructure Security
+
+### Vercel Security Features
+
+Polyseal leverages Vercel's built-in security:
+
+- **HTTPS**: Automatic SSL/TLS for all requests
+- **Edge Functions**: Isolated execution environment
+- **Environment Isolation**: Separate env vars per environment
+- **Automatic Updates**: Security patches applied automatically
+
+### Environment Management
+
+**Production Environment**:
+
+```bash
+# Set via Vercel dashboard or CLI
+vercel env add ALLOWED_ORIGINS production
+vercel env add JWT_SECRET production
+vercel env add RATE_LIMIT_MAX_REQUESTS production
+```
+
+**Environment Separation**:
+
+- **Production**: Live site secrets
+- **Preview**: Branch deployment secrets
+- **Development**: Local `.env.local` file
+
+### Secret Management
+
+**Strong Secrets Generation**:
+
+```bash
+# Generate secure JWT secret (32+ characters)
+openssl rand -hex 32
+
+# Generate encryption key
+openssl rand -base64 32
+```
+
+**Secret Rotation**:
+
+1. Generate new secret
+2. Update Vercel environment variable
+3. Deploy new version
+4. Verify functionality
+5. Remove old secret
+
+---
+
+## Blockchain Security
+
+### Transaction Safety
+
+**Demo Mode Protection**:
+
+```typescript
+// Issue page safety checks
+const [demoEnabled, setDemoEnabled] = useState(false);
+
+// User must explicitly enable demo mode
+if (!demoEnabled) {
+  return <DemoDisabledMessage />;
+}
+
+// Additional confirmation for mainnet (if ever deployed there)
+if (chainId === 1) {
+  return <MainnetWarning />;
+}
+```
+
+**Transaction Verification**:
+
+```typescript
+// Always verify transaction details before signing
+const attestationRequest = {
+  schema: ENV.SCHEMA_UID, // Known safe schema
+  data: {
+    recipient: validateAddress(formData.recipient),
+    data: encodeAttestationData(formData.data),
+    // ... other validated fields
+  },
+};
+
+// Let user review before signing
+if (!userConfirmed) {
+  return <TransactionPreview request={attestationRequest} />;
+}
+```
+
+### Contract Interaction
+
+**Read vs Write Operations**:
+
+```typescript
+// ✅ Safe: Read operations (no gas, no risk)
+const attestation = await publicClient.readContract({
+  address: EAS_CONTRACT,
+  abi: EAS_ABI,
+  functionName: "getAttestation",
+  args: [uid],
+});
+
+// ⚠️  Requires caution: Write operations (costs gas)
+const hash = await writeContract({
+  address: EAS_CONTRACT,
+  abi: EAS_ABI,
+  functionName: "attest",
+  args: [attestationRequest],
+});
+```
+
+---
+
+## Monitoring & Incident Response
+
+### Error Monitoring
+
+**Sentry Integration**:
+
+```typescript
+import * as Sentry from "@sentry/react";
+
+// Automatic error capture
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.NODE_ENV,
+});
+
+// Manual error reporting
+try {
+  await riskyOperation();
+} catch (error) {
+  Sentry.captureException(error);
+  throw error;
+}
+```
+
+**Analytics Security**:
+
+```typescript
+// PostHog - only track non-sensitive events
+posthog.capture("view_home"); // ✅ Safe
+posthog.capture("connect_wallet"); // ✅ Safe
+posthog.capture("user_email", { email }); // ❌ Never track PII
+```
+
+### Security Headers
+
+**Recommended Headers**:
+
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+```
+
+---
+
+## Security Checklist
+
+### Development
+
+- [ ] Environment variables properly prefixed (VITE\_ for client)
+- [ ] No secrets in client-side code or git repository
+- [ ] Input validation on all API endpoints
+- [ ] CORS configured for specific origins only
+- [ ] Rate limiting enabled and tested
+
+### Deployment
+
+- [ ] Production environment variables set securely
+- [ ] HTTPS enforced (automatic with Vercel)
+- [ ] Security headers configured
+- [ ] Error monitoring (Sentry) operational
+- [ ] Rate limits appropriate for production traffic
+
+### Wallet Integration
+
+- [ ] Network verification before transactions
+- [ ] Demo mode warnings for write operations
+- [ ] Transaction details clearly displayed to user
+- [ ] No private key handling in application code
+
+### API Security
+
+- [ ] Rate limiting prevents abuse
+- [ ] CORS allows only expected origins
+- [ ] Input validation prevents injection
+- [ ] Error messages don't leak sensitive info
+- [ ] Secrets properly configured in environment
+
+---
+
+## Incident Response
+
+### Security Issue Reporting
+
+If you discover a security vulnerability:
+
+1. **Don't** create a public GitHub issue
+2. **Do** contact us privately: [security contact info]
+3. **Include**: Steps to reproduce, impact assessment, suggested fix
+4. **Expect**: Response within 24-48 hours
+
+### Emergency Procedures
+
+**API Compromise**:
+
+1. Rotate affected secrets immediately
+2. Deploy emergency rate limiting
+3. Monitor logs for unusual activity
+4. Communicate with users if needed
+
+**Frontend Compromise**:
+
+1. Take down affected deployment
+2. Review and clean compromised code
+3. Redeploy from clean source
+4. Audit for any data exposure
+
+---
+
+## Security Resources
+
+### External Security Guides
+
+- **Vercel Security**: [vercel.com/docs/security](https://vercel.com/docs/security)
+- **Web3 Security**: [consensys.net/diligence/blog/2019/09/19/security-considerations-for-web3-applications/](https://consensys.net/diligence/blog/)
+- **OWASP Top 10**: [owasp.org/www-project-top-ten/](https://owasp.org/www-project-top-ten/)
+
+### Audit Tools
+
+```bash
+# Security audit of npm dependencies
+npm audit
+
+# Check for known vulnerabilities
+npm audit fix
+
+# Static code analysis
+npx eslint . --ext .ts,.tsx --max-warnings=0
+```
+
+---
+
+_For security questions or to report issues, please [contact us](/contact) or check our [GitHub security policy](https://github.com/Mr-Ben-dev/polyseal-attest/security/policy)._

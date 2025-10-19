@@ -1,11 +1,34 @@
-import { motion } from 'framer-motion';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Wallet, TrendingUp, Shield, Clock } from 'lucide-react';
+import { AttestationsTable } from '@/components/AttestationsTable';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAttestationsByAddress } from '@/hooks/useAttestations';
+import { analytics } from '@/lib/analytics';
+import { ENV } from '@/lib/env';
 import SEO from '@/ui/SEO';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { motion } from 'framer-motion';
+import { AlertCircle, Clock, Loader2, Shield, TrendingUp, Wallet } from 'lucide-react';
+import { useEffect } from 'react';
+import { useAccount } from 'wagmi';
 
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
+  
+  useEffect(() => {
+    analytics.viewDashboard();
+  }, []);
+
+  useEffect(() => {
+    if (isConnected && address) {
+      analytics.connectWallet(address);
+    }
+  }, [isConnected, address]);
+  
+  // Fetch attestations for the connected address
+  const {
+    data: attestationsData,
+    isLoading: attestationsLoading,
+    error: attestationsError,
+  } = useAttestationsByAddress(address);
 
   return (
     <>
@@ -62,21 +85,21 @@ export default function Dashboard() {
               {[
                 {
                   icon: Shield,
-                  title: 'Attestations',
-                  value: '—',
-                  subtitle: 'Coming soon',
+                  title: 'Total Attestations',
+                  value: attestationsLoading ? '—' : attestationsData?.attestations?.length?.toString() || '0',
+                  subtitle: 'As attester or recipient',
                 },
                 {
                   icon: TrendingUp,
-                  title: 'Activity',
-                  value: '—',
-                  subtitle: 'Coming soon',
+                  title: 'As Attester',
+                  value: attestationsLoading ? '—' : attestationsData?.attestations?.filter(a => a.attester.toLowerCase() === address?.toLowerCase()).length?.toString() || '0',
+                  subtitle: 'Attestations you created',
                 },
                 {
                   icon: Clock,
-                  title: 'Recent',
-                  value: '—',
-                  subtitle: 'Coming soon',
+                  title: 'As Recipient',
+                  value: attestationsLoading ? '—' : attestationsData?.attestations?.filter(a => a.recipient.toLowerCase() === address?.toLowerCase()).length?.toString() || '0',
+                  subtitle: 'Attestations about you',
                 },
               ].map((stat, i) => (
                 <motion.div
@@ -94,7 +117,7 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Recent Activity Placeholder */}
+            {/* Recent Attestations */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -102,10 +125,32 @@ export default function Dashboard() {
               className="glass-card p-6 max-w-4xl mx-auto mt-6"
             >
               <h2 className="text-xl font-bold mb-4">Recent Attestations</h2>
-              <div className="text-center py-12 text-muted-foreground">
-                <p>Recent attestations will appear here.</p>
-                <p className="text-sm mt-2">This feature is coming soon.</p>
-              </div>
+              
+              {!ENV.EAS_SUBGRAPH_URL ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Subgraph URL not configured. Set VITE_EAS_SUBGRAPH_URL to enable attestation history.
+                  </AlertDescription>
+                </Alert>
+              ) : attestationsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Loading attestations...</span>
+                </div>
+              ) : attestationsError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Failed to load attestations: {attestationsError.message}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <AttestationsTable 
+                  attestations={attestationsData?.attestations || []} 
+                  currentAddress={address}
+                />
+              )}
             </motion.div>
           </>
         )}

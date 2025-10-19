@@ -1,33 +1,74 @@
-# Polyseal 🔒
+# 🏆 Polyseal - Ethereum Attestation Service Infrastructure
 
-> Developer infrastructure for on-chain attestations, identity, and trust on Polygon
+<div align="center">
 
-[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://polyseal.vercel.app)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-polyseal.vercel.app-00D8FF?style=for-the-badge&logoColor=white)](https://polyseal.vercel.app)
+[![Built with Love](https://img.shields.io/badge/💖_Built_with-Love_&_Coffee-FF69B4?style=for-the-badge)](https://github.com/polyseal)
+[![License MIT](https://img.shields.io/badge/📜_License-MIT-green?style=for-the-badge)](LICENSE)
 
-Polyseal is a production-ready developer platform built on Ethereum Attestation Service (EAS) for Polygon. Build verifiable credentials, on-chain identity systems, and trust infrastructure with ease.
+**🎯 Professional Web3 Infrastructure for Ethereum Attestation Service Integration**
 
-## 🚀 Live Links
+_Seamlessly integrate on-chain attestations, identity verification, and trust systems with our production-ready platform built on Polygon_
 
-- **Production Site**: [polyseal.vercel.app](https://polyseal.vercel.app)
-- **Documentation**: [polyseal.vercel.app/docs](https://polyseal.vercel.app/docs)
-- **API**: [polyseal.vercel.app/api](https://polyseal.vercel.app/api)
-- **Lovable Project**: [lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6](https://lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6)
+[📱 Try Demo](https://polyseal.vercel.app) • [📖 Documentation](https://polyseal.vercel.app/docs) • [🚀 API Reference](https://polyseal.vercel.app/api) • [💬 Discord](https://discord.gg/polyseal)
 
-## ✨ Features
+</div>
 
-- 🔐 **Wallet Integration**: Seamless wallet connection with RainbowKit (MetaMask, Rainbow, Coinbase Wallet)
-- 📜 **Attestation Lookup**: Read and verify EAS attestations on Polygon Amoy testnet
-- 🗂️ **Schema Registry**: Query and explore attestation schemas
-- 📊 **Dashboard**: View your attestations and manage on-chain credentials
-- 📚 **MDX Documentation**: Interactive developer guides
-- 🎨 **Modern UI**: Glassmorphism design with smooth animations
-- 📈 **Analytics**: PostHog event tracking and Sentry error monitoring
-- 🔒 **Security**: Rate limiting, CORS protection, and secure API endpoints
+---
+
+## 🌟 What is Polyseal?
+
+**Polyseal** is a comprehensive developer infrastructure platform that makes Ethereum Attestation Service (EAS) integration effortless. Built specifically for Polygon networks, it provides everything developers need to create verifiable credentials, on-chain identity systems, and decentralized trust infrastructure.
+
+### 🎪 **Live Deployments**
+
+- 🌐 **Production**: [polyseal.vercel.app](https://polyseal.vercel.app)
+- 📚 **Documentation**: [polyseal.vercel.app/docs](https://polyseal.vercel.app/docs)
+- 🔧 **API Playground**: [polyseal.vercel.app/api/health](https://polyseal.vercel.app/api/health)
+- 💖 **Lovable Project**: [lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6](https://lovable.dev/projects/7ca778b7-07ea-4844-9839-6ed67c8643b6)
+
+---
+
+## ✨ Key Features & Capabilities
+
+### 🔐 **Web3 Wallet Integration**
+
+- **Multi-Wallet Support**: MetaMask, Rainbow Wallet, Coinbase Wallet, WalletConnect
+- **Seamless Connection**: One-click wallet connection with RainbowKit
+- **Chain Management**: Automatic Polygon Amoy testnet switching
+
+### 📜 **EAS Attestation Management**
+
+- **Attestation Lookup**: Real-time verification of on-chain attestations
+- **Schema Registry**: Browse and query attestation schemas
+- **Data Decoding**: Automatic parsing of attestation data
+- **Verification Status**: Check revocation and expiration states
+
+### 🏗️ **Developer Infrastructure**
+
+- **RESTful API**: Serverless functions for attestation queries
+- **Rate Limiting**: Built-in API protection
+- **CORS Support**: Secure cross-origin resource sharing
+- **Error Monitoring**: Comprehensive error tracking with Sentry
+
+### 🎨 **Modern User Experience**
+
+- **Glassmorphism UI**: Beautiful, modern interface with Tailwind CSS
+- **Smooth Animations**: Framer Motion powered transitions
+- **Responsive Design**: Mobile-first, works on all devices
+- **Dark/Light Modes**: Theme switching support
+- **Accessibility**: WCAG compliant, screen reader friendly
+
+### 📊 **Analytics & Monitoring**
+
+- **User Analytics**: PostHog integration for usage insights
+- **Performance Monitoring**: Real-time error tracking
+- **API Metrics**: Request monitoring and rate limiting analytics
 
 ## 🏗️ Tech Stack
 
 ### Frontend
+
 - **React 18** + **TypeScript** + **Vite**
 - **Tailwind CSS** for styling with custom design system
 - **Framer Motion** for animations
@@ -35,12 +76,14 @@ Polyseal is a production-ready developer platform built on Ethereum Attestation 
 - **RainbowKit** + **Wagmi** + **Viem** for Web3 integration
 
 ### Backend
+
 - **Vercel Serverless Functions**
 - **Polygon Amoy** testnet (EAS v1.3.0)
 - **PostHog** for analytics
 - **Sentry** for error tracking
 
 ### Infrastructure
+
 - **Ethereum Attestation Service (EAS)**: On-chain attestation protocol
 - **Polygon Amoy**: Testnet for development
 - **Vercel**: Hosting and deployment
@@ -76,28 +119,28 @@ The app will be running at `http://localhost:5173`
 
 ### Required (Client-side)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_WALLETCONNECT_PROJECT_ID` | WalletConnect Cloud project ID | `abc123...` |
-| `VITE_RPC_URL` | Polygon Amoy RPC endpoint | `https://rpc-amoy.polygon.technology` |
-| `VITE_EAS_ADDRESS` | EAS contract address | `0xb101...` |
-| `VITE_SCHEMA_REGISTRY` | Schema Registry address | `0x23c5...` |
+| Variable                        | Description                    | Example                               |
+| ------------------------------- | ------------------------------ | ------------------------------------- |
+| `VITE_WALLETCONNECT_PROJECT_ID` | WalletConnect Cloud project ID | `abc123...`                           |
+| `VITE_RPC_URL`                  | Polygon Amoy RPC endpoint      | `https://rpc-amoy.polygon.technology` |
+| `VITE_EAS_ADDRESS`              | EAS contract address           | `0xb101...`                           |
+| `VITE_SCHEMA_REGISTRY`          | Schema Registry address        | `0x23c5...`                           |
 
 ### Optional (Analytics & Monitoring)
 
-| Variable | Description |
-|----------|-------------|
+| Variable           | Description             |
+| ------------------ | ----------------------- |
 | `VITE_POSTHOG_KEY` | PostHog project API key |
-| `VITE_SENTRY_DSN` | Sentry project DSN |
+| `VITE_SENTRY_DSN`  | Sentry project DSN      |
 
 ### Server-only
 
-| Variable | Description |
-|----------|-------------|
-| `POLYGON_RPC_URL` | Backend RPC URL |
+| Variable            | Description                |
+| ------------------- | -------------------------- |
+| `POLYGON_RPC_URL`   | Backend RPC URL            |
 | `SLACK_WEBHOOK_URL` | Contact form notifications |
-| `COINGECKO_API_KEY` | Price API access |
-| `CORS_ORIGIN` | Allowed origin for API |
+| `COINGECKO_API_KEY` | Price API access           |
+| `CORS_ORIGIN`       | Allowed origin for API     |
 
 See `.env.example` for complete list.
 
@@ -125,6 +168,7 @@ Watch our 2-minute demo: [Coming soon]
 ## 📊 Success Metrics
 
 Track key metrics in PostHog:
+
 - Unique visitors
 - Wallets connected
 - Schema reads / attestation lookups

@@ -1,34 +1,18 @@
+import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import '@rainbow-me/rainbowkit/styles.css';
+import * as Sentry from '@sentry/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { WagmiProvider, http } from 'wagmi';
+import { http, WagmiProvider } from 'wagmi';
 import { polygonAmoy } from 'wagmi/chains';
-import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Sentry from '@sentry/react';
 import App from './App';
-import { ENV } from './lib/env';
-import { initAnalytics } from './lib/analytics';
-import '@rainbow-me/rainbowkit/styles.css';
 import './index.css';
+import { initAnalytics } from './lib/analytics';
+import { ENV } from './lib/env';
 
-// Initialize Sentry
-const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
-if (SENTRY_DSN) {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    environment: import.meta.env.MODE,
-  });
-}
-
-// Initialize analytics
+// Initialize analytics and error monitoring
 initAnalytics();
 
 const config = getDefaultConfig({
@@ -58,3 +42,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </Sentry.ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register service worker for improved performance
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}

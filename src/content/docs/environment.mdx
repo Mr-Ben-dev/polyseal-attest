@@ -1,0 +1,290 @@
+# Environment Configuration
+
+This guide covers all environment variables used in Polyseal, common configuration pitfalls, and deployment best practices.
+
+## Environment Variables Overview
+
+Polyseal uses different environment variables for client-side and server-side code:
+
+- **VITE\_\*** variables are bundled into the client and publicly accessible
+- **Non-prefixed** variables are server-only and kept secure
+
+## Client Variables (VITE\_\*)
+
+These variables are included in the frontend bundle and visible to users:
+
+### Core Configuration
+
+```bash
+# Application settings
+VITE_APP_NAME=Polyseal
+VITE_CHAIN_ID=80002
+
+# Network configuration
+VITE_RPC_URL=https://rpc-amoy.polygon.technology
+VITE_SCANNER_BASE=https://amoy.polygonscan.com
+
+# Contract addresses
+VITE_EAS_ADDRESS=0xb101275a60d8bfb14529C421899aD7CA1Ae5B5Fc
+VITE_SCHEMA_REGISTRY=0x23c5701A1BDa89C61d181BD79E5203c730708AE7
+VITE_POLYSEAL_SCHEMA_UID=0x27d06e3659317e9a4f8154d1e849eb53d43d91fb4f219884d1684f86d797804a
+
+# Additional contracts (optional)
+VITE_SESSIONPAY_ADDRESS=0xE23EF3e9A5903cB8F68334FCAfDb89d50541d235
+VITE_MOCKUSDC_ADDRESS=0xcF28F960aA85b051D030374B1ACd14668abaAf3e
+```
+
+### Wallet & External Services
+
+```bash
+# WalletConnect (required for wallet connections)
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
+
+# EAS Subgraph (for dashboard functionality)
+VITE_EAS_SUBGRAPH_URL=https://api.studio.thegraph.com/query/64846/eas-polygon-amoy/version/latest
+
+# Performance settings
+VITE_API_TIMEOUT=30000
+VITE_ENABLE_DEBUG=false
+```
+
+### Analytics & Monitoring (Optional)
+
+```bash
+# PostHog analytics
+VITE_POSTHOG_KEY=your_posthog_project_key
+VITE_POSTHOG_HOST=https://app.posthog.com
+
+# Sentry error monitoring
+VITE_SENTRY_DSN=your_sentry_dsn
+```
+
+## Server Variables
+
+These variables are only available server-side and should be kept secure:
+
+### Blockchain & API
+
+```bash
+# Node environment
+NODE_ENV=production
+
+# Polygon RPC (for server-side calls)
+POLYGON_RPC_URL=https://rpc-amoy.polygon.technology
+
+# Contract addresses (server copies)
+EAS_CONTRACT_ADDRESS=0xb101275a60d8bfb14529C421899aD7CA1Ae5B5Fc
+SCHEMA_REGISTRY_ADDRESS=0x23c5701A1BDa89C61d181BD79E5203c730708AE7
+POLYSEAL_SCHEMA_UID=0x27d06e3659317e9a4f8154d1e849eb53d43d91fb4f219884d1684f86d797804a
+```
+
+### CORS & Security
+
+```bash
+# CORS configuration (CSV format)
+ALLOWED_ORIGINS=https://polyseal-jade.vercel.app,http://localhost:5173
+
+# Rate limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+REQUEST_TIMEOUT_MS=30000
+
+# Security keys (generate secure values)
+JWT_SECRET=your_32_char_minimum_secret_here
+ENCRYPTION_KEY=your_32_char_minimum_key_here
+```
+
+### External APIs (Optional)
+
+```bash
+# CoinGecko API (for price data)
+COINGECKO_API_KEY=your_coingecko_key
+
+# PolygonScan API (for additional blockchain data)
+POLYGONSCAN_API_KEY=your_polygonscan_key
+
+# Notifications
+SLACK_WEBHOOK_URL=your_slack_webhook_url
+```
+
+## Common Configuration Pitfalls
+
+### 1. RPC URL Trailing Slash
+
+❌ **Wrong**: `https://rpc-amoy.polygon.technology/`
+✅ **Correct**: `https://rpc-amoy.polygon.technology`
+
+**Issue**: Trailing slashes can cause RPC connection failures.
+
+### 2. CORS Origins Format
+
+❌ **Wrong**: `ALLOWED_ORIGINS=https://domain1.com https://domain2.com`
+✅ **Correct**: `ALLOWED_ORIGINS=https://domain1.com,https://domain2.com`
+
+**Issue**: CORS origins must be comma-separated, not space-separated.
+
+### 3. Missing VITE\_ Prefix
+
+❌ **Wrong**: `WALLETCONNECT_PROJECT_ID=abc123`
+✅ **Correct**: `VITE_WALLETCONNECT_PROJECT_ID=abc123`
+
+**Issue**: Client variables need VITE\_ prefix to be accessible in the frontend.
+
+### 4. Inconsistent Chain ID
+
+❌ **Wrong**: Mixed chain IDs between frontend and backend
+✅ **Correct**: Always use `80002` for Polygon Amoy
+
+### 5. WalletConnect Project ID
+
+❌ **Wrong**: Using placeholder or missing value
+✅ **Correct**: Get real project ID from [WalletConnect Cloud](https://cloud.walletconnect.com/)
+
+## Development Setup
+
+### Local Development (.env.local)
+
+Create a `.env.local` file in your project root:
+
+```bash
+# Copy from .env.example and customize
+cp .env.example .env.local
+
+# Edit with your values
+# Required: VITE_WALLETCONNECT_PROJECT_ID
+# Optional: Analytics keys, API keys
+```
+
+### Environment Validation
+
+The app validates critical environment variables on startup:
+
+```typescript
+// src/lib/env.ts
+export const ENV = {
+  CHAIN_ID: Number(import.meta.env.VITE_CHAIN_ID || 80002),
+  RPC: import.meta.env.VITE_RPC_URL || "https://rpc-amoy.polygon.technology",
+  // ... other variables with fallbacks
+};
+```
+
+## Deployment Configuration
+
+### Vercel Environment Variables
+
+Set these in your Vercel dashboard or CLI:
+
+```bash
+# Production
+vercel env add ALLOWED_ORIGINS production
+# Enter: https://polyseal-jade.vercel.app
+
+vercel env add VITE_WALLETCONNECT_PROJECT_ID production
+# Enter: your_project_id
+
+# Preview (optional)
+vercel env add ALLOWED_ORIGINS preview
+# Enter: https://polyseal-jade.vercel.app,http://localhost:5173
+```
+
+### Environment Hierarchy
+
+1. **Production**: Live site environment variables
+2. **Preview**: Branch preview environment variables
+3. **Development**: Local `.env.local` file
+4. **Fallbacks**: Hardcoded defaults in code
+
+## Security Best Practices
+
+### Never Expose Secrets
+
+❌ **Don't put in VITE\_ variables**:
+
+- API keys for external services
+- JWT secrets
+- Database credentials
+- Private keys
+
+✅ **Safe for VITE\_ variables**:
+
+- Contract addresses (public on blockchain)
+- RPC URLs (public endpoints)
+- Chain IDs
+- App configuration
+
+### Rotate Keys Regularly
+
+- Change JWT_SECRET periodically
+- Rotate API keys
+- Update WalletConnect project if compromised
+
+### Validate Origins
+
+Always set `ALLOWED_ORIGINS` to specific domains:
+
+- Production: Your live domain only
+- Development: Add localhost for testing
+
+## Troubleshooting
+
+### Common Error Messages
+
+**"Cannot connect to wallet"**
+
+- Check `VITE_WALLETCONNECT_PROJECT_ID`
+- Verify WalletConnect project is active
+
+**"Network not supported"**
+
+- Ensure `VITE_CHAIN_ID=80002`
+- Check RPC URL is correct
+
+**"CORS error"**
+
+- Verify `ALLOWED_ORIGINS` includes your domain
+- Check for trailing slashes in URLs
+
+**"Subgraph not available"**
+
+- Set `VITE_EAS_SUBGRAPH_URL` for dashboard features
+- Verify subgraph endpoint is accessible
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+VITE_ENABLE_DEBUG=true
+```
+
+This will show additional console logs for troubleshooting.
+
+## Environment Templates
+
+### Minimal Setup (.env.minimal)
+
+```bash
+# Absolute minimum for basic functionality
+VITE_CHAIN_ID=80002
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+### Full Production (.env.production)
+
+```bash
+# Complete production configuration
+NODE_ENV=production
+POLYGON_RPC_URL=https://rpc-amoy.polygon.technology
+ALLOWED_ORIGINS=https://polyseal-jade.vercel.app
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id
+VITE_EAS_SUBGRAPH_URL=https://api.studio.thegraph.com/query/64846/eas-polygon-amoy/version/latest
+VITE_POSTHOG_KEY=your_posthog_key
+VITE_SENTRY_DSN=your_sentry_dsn
+RATE_LIMIT_MAX_REQUESTS=100
+JWT_SECRET=your_32_character_secret
+```
+
+---
+
+_For more configuration help, see our [API documentation](/docs/api) or [contact support](/contact)._

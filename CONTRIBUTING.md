@@ -48,6 +48,33 @@ git checkout -b feature/your-feature-name
 git checkout -b fix/your-bug-fix
 ```
 
+### 5. Development Commands
+
+```bash
+# Start development server
+npm run dev
+
+# Run linting
+npm run lint
+npm run lint:fix
+
+# Format code
+npm run format
+npm run format:check
+
+# Type checking
+npm run type-check
+
+# Build for production
+npm run build
+
+# Run all CI checks locally
+npm run ci
+
+# Performance checks
+npm run perf
+```
+
 ## 💻 Development Guidelines
 
 ### Code Style
@@ -56,6 +83,7 @@ git checkout -b fix/your-bug-fix
 - Follow existing code formatting (Prettier + ESLint)
 - Write meaningful commit messages
 - Add comments for complex logic
+- Pre-commit hooks will automatically format and lint your code
 
 ### Component Guidelines
 
@@ -104,6 +132,7 @@ git commit -m "feat: add amazing feature"
 ```
 
 Use conventional commits:
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation changes
@@ -193,6 +222,7 @@ If you discover a security vulnerability:
 ## 🎉 Recognition
 
 Contributors will be:
+
 - Listed in our README
 - Credited in release notes
 - Invited to our contributor Discord

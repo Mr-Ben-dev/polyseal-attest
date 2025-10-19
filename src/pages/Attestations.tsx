@@ -1,12 +1,15 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { Search, Loader2, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
-import { ENV } from '@/lib/env';
+import { analytics, captureError } from '@/lib/analytics';
 import { getSchemaByUid } from '@/lib/eas';
+import { ENV } from '@/lib/env';
 import SEO from '@/ui/SEO';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { AlertCircle, CheckCircle, ExternalLink, Loader2, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export default function Attestations() {
+  const [searchParams] = useSearchParams();
   const [uid, setUid] = useState('');
 
   // Fetch schema definition
@@ -21,13 +24,41 @@ export default function Attestations() {
   // Lookup attestation mutation
   const lookup = useMutation({
     mutationFn: async (attestationUid: string) => {
-      const response = await fetch(`${ENV.SERVER}/eas/${attestationUid}`);
-      if (!response.ok) {
-        throw new Error('Attestation not found');
+      analytics.lookupAttestation(attestationUid);
+      
+      try {
+        const response = await fetch(`/api/eas/${attestationUid}`);
+        if (!response.ok) {
+          const error = new Error('Attestation not found');
+          analytics.lookupError(attestationUid, error.message);
+          throw error;
+        }
+        
+        const data = await response.json();
+        analytics.lookupSuccess(attestationUid);
+        return data;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        analytics.lookupError(attestationUid, errorMessage);
+        captureError(error instanceof Error ? error : new Error(errorMessage), { 
+          uid: attestationUid.slice(0, 10) + '...'
+        });
+        throw error;
       }
-      return response.json();
     },
   });
+
+  useEffect(() => {
+    analytics.viewAttestations();
+    
+    // Check for pre-filled UID from URL parameters (from Judge Mode)
+    const urlUid = searchParams.get('uid');
+    if (urlUid) {
+      setUid(urlUid);
+      // Automatically trigger lookup for demo UIDs
+      lookup.mutate(urlUid);
+    }
+  }, [searchParams, lookup]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

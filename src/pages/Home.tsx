@@ -1,10 +1,16 @@
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Shield, Zap, Lock, Code, CheckCircle, ArrowRight } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 import SEO from '@/ui/SEO';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { motion } from 'framer-motion';
+import { ArrowRight, CheckCircle, Code, Lock, Shield, Zap } from 'lucide-react';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
+  useEffect(() => {
+    analytics.viewHome();
+  }, []);
+
   return (
     <>
       <SEO title="Polyseal — On-chain attestations made simple" path="/" />

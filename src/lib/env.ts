@@ -1,5 +1,4 @@
 export const ENV = {
-  SERVER: import.meta.env.VITE_SERVER_URL || '/api',
   CHAIN_ID: Number(import.meta.env.VITE_CHAIN_ID || 80002),
   RPC: import.meta.env.VITE_RPC_URL || 'https://rpc-amoy.polygon.technology',
   SCANNER: import.meta.env.VITE_SCANNER_BASE || 'https://amoy.polygonscan.com',
@@ -9,4 +8,5 @@ export const ENV = {
   SESSIONPAY: (import.meta.env.VITE_SESSIONPAY_ADDRESS || '0xE23EF3e9A5903cB8F68334FCAfDb89d50541d235') as `0x${string}`,
   MOCKUSDC: (import.meta.env.VITE_MOCKUSDC_ADDRESS || '0xcF28F960aA85b051D030374B1ACd14668abaAf3e') as `0x${string}`,
   WALLETCONNECT_PROJECT_ID: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '',
+  EAS_SUBGRAPH_URL: import.meta.env.VITE_EAS_SUBGRAPH_URL || '',
 };

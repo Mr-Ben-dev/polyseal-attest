@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import polyseaLogo from '@/assets/polyseal-logo.png';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Link } from 'react-router-dom';
 
 export default function Navbar() {
   return (
@@ -32,12 +32,22 @@ export default function Navbar() {
             <Link to="/dashboard" className="text-foreground/80 hover:text-foreground transition-colors">
               Dashboard
             </Link>
+            <Link to="/issue" className="text-foreground/80 hover:text-foreground transition-colors">
+              Issue
+            </Link>
             <Link to="/contact" className="text-foreground/80 hover:text-foreground transition-colors">
               Contact
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
+            <Link 
+              to="/demo" 
+              className="px-3 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <span className="text-xs">🎯</span>
+              Judge Mode
+            </Link>
             <ConnectButton />
           </div>
         </div>

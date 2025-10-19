@@ -1,15 +1,28 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
 import { polygonAmoy } from 'wagmi/chains';
-import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export function NetworkGuard() {
+interface NetworkGuardProps {
+  children?: React.ReactNode;
+}
+
+export function NetworkGuard({ children }: NetworkGuardProps) {
   const chainId = useChainId();
   const { isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
 
-  if (!isConnected) return null;
+  if (!isConnected) {
+    return (
+      <Alert className="m-4 border-yellow-500/50 bg-yellow-500/10">
+        <AlertCircle className="h-4 w-4 text-yellow-500" />
+        <AlertDescription className="text-yellow-700">
+          Please connect your wallet to continue.
+        </AlertDescription>
+      </Alert>
+    );
+  }
   
   if (chainId !== polygonAmoy.id) {
     return (
@@ -17,7 +30,7 @@ export function NetworkGuard() {
         <AlertCircle className="h-4 w-4 text-destructive" />
         <AlertDescription className="flex items-center justify-between">
           <span className="text-destructive">
-            You're on the wrong network. Please switch to Polygon Amoy testnet.
+            Please switch to Polygon Amoy testnet.
           </span>
           <Button
             variant="destructive"
@@ -31,5 +44,5 @@ export function NetworkGuard() {
     );
   }
   
-  return null;
+  return <>{children}</>;
 }

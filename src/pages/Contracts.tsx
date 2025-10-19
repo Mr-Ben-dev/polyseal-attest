@@ -1,13 +1,21 @@
-import { motion } from 'framer-motion';
-import { ExternalLink, Copy, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
+import { EAS_ABI, MOCKUSDC_ABI, SCHEMA_REGISTRY_ABI } from '@/lib/abis';
+import { analytics } from '@/lib/analytics';
 import { ENV } from '@/lib/env';
 import SEO from '@/ui/SEO';
-import { toast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
+import { CheckCircle, Code, Copy, ExternalLink, Loader2, Play } from 'lucide-react';
+import { useState } from 'react';
+import { useReadContract } from 'wagmi';
 
 export default function Contracts() {
   const explorerLink = (address: string) => `${ENV.SCANNER}/address/${address}`;
   const [copied, setCopied] = useState<string | null>(null);
+  const [testInputs, setTestInputs] = useState<Record<string, string>>({});
+  const [expandedContract, setExpandedContract] = useState<string | null>(null);
 
   const copyAddress = (address: string, name: string) => {
     navigator.clipboard.writeText(address);
@@ -16,7 +24,126 @@ export default function Contracts() {
       title: 'Copied!',
       description: `${name} address copied to clipboard`,
     });
+    analytics.copyContract(name);
     setTimeout(() => setCopied(null), 2000);
+  };
+
+  const copyABI = (abi: any, name: string) => {
+    navigator.clipboard.writeText(JSON.stringify(abi, null, 2));
+    toast({
+      title: 'ABI Copied!',
+      description: `${name} ABI copied to clipboard`,
+    });
+    analytics.copyToClipboard(`${name}_abi`);
+  };
+
+  // Contract test read component
+  const ContractTestRead = ({ contract }: { contract: typeof contracts[0] }) => {
+    const [selectedFunction, setSelectedFunction] = useState<string>('');
+    const [testParams, setTestParams] = useState<string[]>([]);
+    
+    const selectedFunc = contract.testFunctions.find(f => f.name === selectedFunction);
+    
+    const { data, error, isLoading, refetch } = useReadContract({
+      address: contract.address as `0x${string}`,
+      abi: contract.abi || [],
+      functionName: selectedFunction as any,
+      args: testParams as any,
+      query: { enabled: false }
+    });
+
+    const handleTest = () => {
+      if (!selectedFunc) return;
+      
+      analytics.testContractFunction(contract.name, selectedFunction);
+      
+      refetch();
+    };
+
+    return (
+      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+        <Label className="text-sm font-medium">Test Read Functions</Label>
+        
+        {contract.testFunctions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No test functions available</p>
+        ) : (
+          <>
+            <select
+              value={selectedFunction}
+              onChange={(e) => {
+                setSelectedFunction(e.target.value);
+                setTestParams([]);
+              }}
+              className="w-full p-2 border rounded-md bg-background"
+            >
+              <option value="">Select a function to test</option>
+              {contract.testFunctions.map((func) => (
+                <option key={func.name} value={func.name}>
+                  {func.name} - {func.description}
+                </option>
+              ))}
+            </select>
+
+            {selectedFunc && selectedFunc.args.length > 0 && (
+              <div className="space-y-2">
+                {selectedFunc.args.map((arg, index) => (
+                  <div key={arg}>
+                    <Label className="text-xs">{arg}</Label>
+                    <Input
+                      placeholder={selectedFunc.placeholder || `Enter ${arg}`}
+                      value={testParams[index] || ''}
+                      onChange={(e) => {
+                        const newParams = [...testParams];
+                        newParams[index] = e.target.value;
+                        setTestParams(newParams);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedFunc && (
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleTest} 
+                  disabled={isLoading || (selectedFunc.args.length > 0 && testParams.some(p => !p))}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Test Function
+                    </>
+                  )}
+                </Button>
+
+                {data !== undefined && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                    <Label className="text-xs text-green-700">Result:</Label>
+                    <pre className="text-sm text-green-800 mt-1 whitespace-pre-wrap">
+                      {JSON.stringify(data, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <Label className="text-xs text-red-700">Error:</Label>
+                    <p className="text-sm text-red-800 mt-1">{error.message}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
   };
 
   const contracts = [
@@ -24,21 +151,76 @@ export default function Contracts() {
       name: 'EAS',
       address: ENV.EAS,
       description: 'Ethereum Attestation Service main contract for creating and managing attestations.',
+      abi: EAS_ABI,
+      testFunctions: [
+        {
+          name: 'getSchemaRegistry',
+          args: [],
+          description: 'Get the schema registry contract address'
+        },
+        {
+          name: 'getAttestation',
+          args: ['uid'],
+          description: 'Get attestation details by UID',
+          placeholder: 'Enter attestation UID (0x...)'
+        },
+        {
+          name: 'isAttestationValid',
+          args: ['uid'],
+          description: 'Check if attestation is valid',
+          placeholder: 'Enter attestation UID (0x...)'
+        }
+      ]
     },
     {
       name: 'SchemaRegistry',
       address: ENV.REGISTRY,
       description: 'Registry contract for managing attestation schemas and their definitions.',
+      abi: SCHEMA_REGISTRY_ABI,
+      testFunctions: [
+        {
+          name: 'getSchema',
+          args: ['uid'],
+          description: 'Get schema details by UID',
+          placeholder: 'Enter schema UID (0x...)'
+        }
+      ]
     },
     {
       name: 'SessionPay',
       address: ENV.SESSIONPAY,
       description: 'Payment contract for session-based transactions and gasless experiences.',
+      abi: null, // No ABI for SessionPay in this demo
+      testFunctions: []
     },
     {
       name: 'MockUSDC',
       address: ENV.MOCKUSDC,
       description: 'Test USDC token for development and testing on Polygon Amoy.',
+      abi: MOCKUSDC_ABI,
+      testFunctions: [
+        {
+          name: 'name',
+          args: [],
+          description: 'Get token name'
+        },
+        {
+          name: 'symbol',
+          args: [],
+          description: 'Get token symbol'
+        },
+        {
+          name: 'totalSupply',
+          args: [],
+          description: 'Get total token supply'
+        },
+        {
+          name: 'balanceOf',
+          args: ['account'],
+          description: 'Get token balance of address',
+          placeholder: 'Enter address (0x...)'
+        }
+      ]
     },
   ];
 
@@ -74,7 +256,7 @@ export default function Contracts() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-4">
                 <code className="flex-1 text-sm break-all">{contract.address}</code>
                 <button
                   onClick={() => copyAddress(contract.address, contract.name)}
@@ -96,6 +278,36 @@ export default function Contracts() {
                 >
                   <ExternalLink className="w-4 h-4 text-muted-foreground" />
                 </a>
+              </div>
+
+              {/* ABI and Test Section */}
+              <div className="space-y-4">
+                {contract.abi && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyABI(contract.abi, contract.name)}
+                      className="flex-1"
+                    >
+                      <Code className="w-4 h-4 mr-2" />
+                      Copy ABI
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setExpandedContract(expandedContract === contract.name ? null : contract.name)}
+                      className="flex-1"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      {expandedContract === contract.name ? 'Hide Tests' : 'Test Functions'}
+                    </Button>
+                  </div>
+                )}
+
+                {expandedContract === contract.name && contract.abi && (
+                  <ContractTestRead contract={contract} />
+                )}
               </div>
             </motion.div>
           ))}

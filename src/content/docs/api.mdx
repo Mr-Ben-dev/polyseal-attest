@@ -1,0 +1,461 @@
+# API Reference
+
+Polyseal provides several API endpoints for interacting with EAS attestations and supporting services. All endpoints are served from `/api/` and include proper CORS headers for cross-origin requests.
+
+## Base URL
+
+- **Production**: `https://polyseal-jade.vercel.app/api`
+- **Development**: `http://localhost:5173/api`
+- **Relative**: `/api` (recommended for client calls)
+
+## Authentication
+
+Most endpoints are public and don't require authentication. Rate limiting is applied to prevent abuse.
+
+## Endpoints Overview
+
+| Endpoint           | Method | Purpose                |
+| ------------------ | ------ | ---------------------- |
+| `/api/health`      | GET    | Service health check   |
+| `/api/eas/[uid]`   | GET    | Get attestation by UID |
+| `/api/price`       | GET    | Get POL token price    |
+| `/api/contact`     | POST   | Submit contact form    |
+| `/api/robots.txt`  | GET    | Robots.txt for SEO     |
+| `/api/sitemap.xml` | GET    | XML sitemap            |
+
+---
+
+## GET /api/health
+
+Health check endpoint to verify API service status.
+
+### Request
+
+```http
+GET /api/health
+```
+
+### Response
+
+```json
+{
+  "ok": true,
+  "timestamp": 1729284000000,
+  "service": "polyseal-api"
+}
+```
+
+### Example Usage
+
+```javascript
+// Check if API is available
+const response = await fetch("/api/health");
+const health = await response.json();
+
+if (health.ok) {
+  console.log("API is healthy");
+}
+```
+
+---
+
+## GET /api/eas/[uid]
+
+Retrieve an EAS attestation by its unique identifier.
+
+### Parameters
+
+- **uid** (path parameter): The 32-byte hex string UID of the attestation
+
+### Request
+
+```http
+GET /api/eas/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+```
+
+### Success Response (200)
+
+```json
+{
+  "uid": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "schema": "0x27d06e3659317e9a4f8154d1e849eb53d43d91fb4f219884d1684f86d797804a",
+  "refUID": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "time": 1729284000,
+  "expirationTime": 0,
+  "revocationTime": 0,
+  "recipient": "0x742d35Cc6635C0532925a3b8D437d3b8aBcb3035",
+  "attester": "0x1234567890123456789012345678901234567890",
+  "revocable": true,
+  "data": "0x68656c6c6f20776f726c64"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "error": "attestation_not_found"
+}
+```
+
+### Error Response (400)
+
+```json
+{
+  "error": "missing_uid"
+}
+```
+
+### Response Fields
+
+| Field            | Type    | Description                                   |
+| ---------------- | ------- | --------------------------------------------- |
+| `uid`            | string  | Unique attestation identifier                 |
+| `schema`         | string  | Schema UID this attestation uses              |
+| `refUID`         | string  | Referenced attestation UID (if any)           |
+| `time`           | number  | Unix timestamp when created                   |
+| `expirationTime` | number  | Unix timestamp when expires (0 = never)       |
+| `revocationTime` | number  | Unix timestamp when revoked (0 = not revoked) |
+| `recipient`      | string  | Address the attestation is about              |
+| `attester`       | string  | Address that created the attestation          |
+| `revocable`      | boolean | Whether this attestation can be revoked       |
+| `data`           | string  | The attestation data (hex-encoded)            |
+
+### Example Usage
+
+```javascript
+// Fetch specific attestation
+const uid = "0x1234...cdef";
+const response = await fetch(`/api/eas/${uid}`);
+
+if (response.ok) {
+  const attestation = await response.json();
+  console.log("Attester:", attestation.attester);
+  console.log("Data:", attestation.data);
+} else {
+  console.error("Attestation not found");
+}
+```
+
+---
+
+## GET /api/price
+
+Get current POL token price data from CoinGecko.
+
+### Request
+
+```http
+GET /api/price
+```
+
+### Success Response (200)
+
+```json
+{
+  "polygon-ecosystem-token": {
+    "usd": 0.45
+  }
+}
+```
+
+### Error Response (500)
+
+```json
+{
+  "error": "Failed to fetch price data"
+}
+```
+
+### Example Usage
+
+```javascript
+// Get current POL price
+const response = await fetch("/api/price");
+const priceData = await response.json();
+const polPrice = priceData["polygon-ecosystem-token"]?.usd;
+
+console.log(`POL Price: $${polPrice}`);
+```
+
+---
+
+## POST /api/contact
+
+Submit a contact form message.
+
+### Request Body
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "message": "Hello, I have a question about attestations."
+}
+```
+
+### Request Headers
+
+```http
+Content-Type: application/json
+```
+
+### Success Response (200)
+
+```json
+{
+  "success": true
+}
+```
+
+### Error Responses
+
+**400 - Missing Fields**
+
+```json
+{
+  "error": "missing_fields"
+}
+```
+
+**405 - Method Not Allowed**
+
+```json
+{
+  "error": "method_not_allowed"
+}
+```
+
+**500 - Server Error**
+
+```json
+{
+  "error": "Failed to process contact form"
+}
+```
+
+### Example Usage
+
+```javascript
+// Submit contact form
+const formData = {
+  name: "Alice",
+  email: "alice@example.com",
+  message: "How do I create an attestation?",
+};
+
+const response = await fetch("/api/contact", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(formData),
+});
+
+if (response.ok) {
+  console.log("Message sent successfully");
+}
+```
+
+---
+
+## GET /api/robots.txt
+
+Returns robots.txt for search engine crawlers.
+
+### Request
+
+```http
+GET /api/robots.txt
+```
+
+### Response
+
+```
+User-agent: *
+Allow: /
+
+Sitemap: https://polyseal.vercel.app/api/sitemap.xml
+```
+
+---
+
+## GET /api/sitemap.xml
+
+Returns XML sitemap for search engines.
+
+### Request
+
+```http
+GET /api/sitemap.xml
+```
+
+### Response
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://polyseal.vercel.app/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- Additional URLs -->
+</urlset>
+```
+
+---
+
+## Rate Limiting
+
+All API endpoints are protected by rate limiting:
+
+- **Window**: 15 minutes (900,000ms)
+- **Max Requests**: 100 per window per IP
+- **Headers**: Rate limit info in response headers
+
+### Rate Limit Headers
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1729284900
+```
+
+### Rate Limit Exceeded (429)
+
+```json
+{
+  "error": "Too many requests, please try again later"
+}
+```
+
+---
+
+## CORS Configuration
+
+All endpoints support CORS with the following configuration:
+
+### Allowed Origins
+
+- `https://polyseal-jade.vercel.app` (production)
+- `http://localhost:5173` (development)
+
+### Allowed Methods
+
+- `GET`, `POST`, `OPTIONS`
+
+### Allowed Headers
+
+- `Content-Type`, `Authorization`
+
+### Preflight Requests
+
+OPTIONS requests return `204 No Content` with proper CORS headers.
+
+---
+
+## Error Handling
+
+### Standard Error Format
+
+All errors follow a consistent format:
+
+```json
+{
+  "error": "error_code",
+  "message": "Human readable description (optional)"
+}
+```
+
+### Common Error Codes
+
+| Code                    | Status | Description                  |
+| ----------------------- | ------ | ---------------------------- |
+| `missing_uid`           | 400    | UID parameter is required    |
+| `attestation_not_found` | 404    | Attestation does not exist   |
+| `missing_fields`        | 400    | Required form fields missing |
+| `method_not_allowed`    | 405    | HTTP method not supported    |
+| `rate_limit_exceeded`   | 429    | Too many requests            |
+| `internal_error`        | 500    | Server error occurred        |
+
+---
+
+## SDK Examples
+
+### React Hook Usage
+
+```typescript
+// Custom hook for attestation lookup
+import { useQuery } from "@tanstack/react-query";
+
+function useAttestation(uid: string) {
+  return useQuery({
+    queryKey: ["attestation", uid],
+    queryFn: async () => {
+      const response = await fetch(`/api/eas/${uid}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch attestation");
+      }
+      return response.json();
+    },
+    enabled: Boolean(uid),
+  });
+}
+```
+
+### Node.js Client
+
+```javascript
+// Server-side API client
+class PolysealAPI {
+  constructor(baseURL = "https://polyseal-jade.vercel.app") {
+    this.baseURL = baseURL;
+  }
+
+  async getAttestation(uid) {
+    const response = await fetch(`${this.baseURL}/api/eas/${uid}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  async getPrice() {
+    const response = await fetch(`${this.baseURL}/api/price`);
+    return response.json();
+  }
+}
+
+// Usage
+const api = new PolysealAPI();
+const attestation = await api.getAttestation("0x1234...");
+```
+
+---
+
+## Testing
+
+### Health Check
+
+```bash
+curl https://polyseal-jade.vercel.app/api/health
+```
+
+### Attestation Lookup
+
+```bash
+curl https://polyseal-jade.vercel.app/api/eas/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+```
+
+### Contact Form
+
+```bash
+curl -X POST https://polyseal-jade.vercel.app/api/contact \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","email":"test@example.com","message":"API test"}'
+```
+
+---
+
+_For more API help, check our [environment setup](/docs/environment) or [contact us](/contact)._
