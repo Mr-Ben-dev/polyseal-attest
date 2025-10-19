@@ -9,6 +9,7 @@ import SEO from '@/ui/SEO';
 import { motion } from 'framer-motion';
 import { CheckCircle, Code, Copy, ExternalLink, Loader2, Play } from 'lucide-react';
 import { useState } from 'react';
+import type { Abi } from 'viem';
 import { useReadContract } from 'wagmi';
 
 export default function Contracts() {
@@ -28,7 +29,7 @@ export default function Contracts() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const copyABI = (abi: unknown[], name: string) => {
+  const copyABI = (abi: Abi, name: string) => {
     navigator.clipboard.writeText(JSON.stringify(abi, (key, value) => 
       typeof value === 'bigint' ? value.toString() : value, 2
     ));
@@ -48,11 +49,11 @@ export default function Contracts() {
     
     const { data, error, isLoading, refetch } = useReadContract({
       address: contract.address as `0x${string}`,
-      abi: contract.abi || [],
+      abi: contract.abi as Abi,
       functionName: selectedFunction,
-      args: testParams as readonly unknown[],
+      args: testParams.length > 0 ? testParams : undefined,
       query: { enabled: false }
-    });
+    } as any);
 
     const handleTest = () => {
       if (!selectedFunc) return;
