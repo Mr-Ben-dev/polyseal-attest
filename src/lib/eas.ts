@@ -1,4 +1,4 @@
-import { createPublicClient, http, parseAbi } from 'viem';
+import { createPublicClient, http } from 'viem';
 import { polygonAmoy } from 'viem/chains';
 import { ENV } from './env';
 
@@ -7,9 +7,25 @@ export const publicClient = createPublicClient({
   transport: http(ENV.RPC),
 });
 
-export const schemaRegistryAbi = parseAbi([
-  'function getSchema(bytes32 uid) view returns (tuple(bytes32 uid, address resolver, bool revocable, string schema))',
-]);
+export const schemaRegistryAbi = [
+  {
+    inputs: [{ name: 'uid', type: 'bytes32' }],
+    name: 'getSchema',
+    outputs: [
+      {
+        components: [
+          { name: 'uid', type: 'bytes32' },
+          { name: 'resolver', type: 'address' },
+          { name: 'revocable', type: 'bool' },
+          { name: 'schema', type: 'string' },
+        ],
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
 
 export async function getSchemaByUid(registry: `0x${string}`, uid: `0x${string}`) {
   try {
