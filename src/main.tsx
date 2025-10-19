@@ -1,12 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { WagmiProvider, createConfig, http } from 'wagmi';
+import { BrowserRouter } from 'react-router-dom';
+import { WagmiProvider, http } from 'wagmi';
 import { polygonAmoy } from 'wagmi/chains';
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import AppShell from './shell/AppShell';
-import routes from './routes';
+import App from './App';
 import { ENV } from './lib/env';
 import '@rainbow-me/rainbowkit/styles.css';
 import './index.css';
@@ -21,7 +20,6 @@ const config = getDefaultConfig({
   ssr: false,
 });
 
-const router = createBrowserRouter(routes);
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -29,9 +27,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <AppShell>
-            <RouterProvider router={router} />
-          </AppShell>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
