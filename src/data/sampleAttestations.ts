@@ -5,29 +5,33 @@ export interface SampleAttestation {
   description: string;
   expectedOutcome: 'success' | 'error';
   category: 'valid' | 'invalid' | 'edge-case';
+  isDemoOnly?: boolean;
 }
 
 export const SAMPLE_ATTESTATIONS: SampleAttestation[] = [
   {
     uid: '0x27d06e3659317e9a4f8154d1e849eb53d43d91fb4f219884d1684f86d797804a',
-    title: 'Polyseal Schema UID',
-    description: 'This is our main schema UID - should return schema data, not attestation',
+    title: 'Polyseal Schema UID (Demo)',
+    description: 'This is our main schema UID - demonstrates API error handling',
     expectedOutcome: 'error',
     category: 'edge-case',
+    isDemoOnly: true,
   },
   {
-    uid: '0x0000000000000000000000000000000000000000000000000000000000000000',
-    title: 'Empty Attestation',
-    description: 'Zero UID - should return empty/null attestation data',
-    expectedOutcome: 'success',
-    category: 'edge-case',
+    uid: 'demo-invalid-format',
+    title: 'Invalid UID Format (Demo)',
+    description: 'Tests handling of malformed UID format',
+    expectedOutcome: 'error',
+    category: 'invalid',
+    isDemoOnly: true,
   },
   {
-    uid: '0x0000000000000000000000000000000000000000000000000000000000000001',
-    title: 'Minimal UID Test',
-    description: 'Tests handling of minimal non-zero UID',
-    expectedOutcome: 'success',
-    category: 'edge-case',
+    uid: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    title: 'Non-existent Attestation (Demo)',
+    description: 'Valid format but non-existent attestation - shows API error handling',
+    expectedOutcome: 'error',
+    category: 'invalid',
+    isDemoOnly: true,
   },
   {
     uid: '0x1111111111111111111111111111111111111111111111111111111111111111',

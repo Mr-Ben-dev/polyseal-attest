@@ -26,6 +26,18 @@ export default function Attestations() {
     mutationFn: async (attestationUid: string) => {
       analytics.lookupAttestation(attestationUid);
       
+      // Check if this is a demo-only UID that shouldn't hit the API
+      const isDemoUID = attestationUid === 'demo-invalid-format' || 
+                        attestationUid.length < 66 || 
+                        attestationUid === '0x0000000000000000000000000000000000000000000000000000000000000000';
+      
+      if (isDemoUID) {
+        // Simulate API response for demo UIDs
+        const error = new Error(`Demo UID "${attestationUid}" - This is for demonstration purposes only. In production, this would query the blockchain.`);
+        analytics.lookupError(attestationUid, error.message);
+        throw error;
+      }
+      
       try {
         const response = await fetch(`/api/eas/${encodeURIComponent(attestationUid)}`, {
           method: 'GET',

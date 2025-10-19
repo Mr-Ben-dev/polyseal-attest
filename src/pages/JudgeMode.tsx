@@ -62,10 +62,13 @@ export default function JudgeMode() {
               <Play className="w-8 h-8 text-primary" />
             </motion.div>
             
-            <h1 className="text-4xl font-bold mb-4">Judge Mode</h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <h1 className="text-4xl font-bold mb-4">Judge Mode (Demo)</h1>
+            <p className="text-xl text-muted-foreground mb-4">
               Test Polyseal with pre-selected attestation UIDs. Click any example to see how the system handles different scenarios.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-sm text-blue-800">
+              <strong>Note:</strong> These are demo UIDs for testing error handling. Demo UIDs won't hit the blockchain API to prevent service worker conflicts.
+            </div>
             
             {/* Info Banner */}
             <motion.div
