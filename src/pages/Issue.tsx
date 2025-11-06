@@ -62,6 +62,17 @@ const EAS_ABI = [
     stateMutability: 'payable',
     type: 'function',
   },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'recipient', type: 'address' },
+      { indexed: true, name: 'attester', type: 'address' },
+      { indexed: false, name: 'uid', type: 'bytes32' },
+      { indexed: true, name: 'schemaUID', type: 'bytes32' },
+    ],
+    name: 'Attested',
+    type: 'event',
+  },
 ] as const;
 
 // Common schemas on Polygon Amoy for demo
@@ -109,9 +120,16 @@ export default function Issue() {
 
   const { writeContract, data: hash, error: writeError, isPending } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    data: receipt,
+  } = useWaitForTransactionReceipt({
     hash,
   });
+
+  // Extract attestation UID from transaction receipt
+  const attestationUid = receipt?.logs?.[0]?.topics?.[3] || hash;
 
   // Fetch selected schema details
   const { data: schemaData, isLoading: schemaLoading } = useQuery({
@@ -238,7 +256,7 @@ export default function Issue() {
 
                 <div className="flex gap-3">
                   <Button asChild className="flex-1">
-                    <a href={`/attestations?uid=${hash}`}>View Attestation</a>
+                    <a href={`/attestations?uid=${attestationUid}`}>View Attestation</a>
                   </Button>
                   <Button asChild variant="outline">
                     <a href={`${ENV.SCANNER}/tx/${hash}`} target="_blank" rel="noopener noreferrer">

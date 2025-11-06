@@ -119,6 +119,13 @@ export default function Attestations() {
         throw error;
       }
     },
+    retry: false, // Disable automatic retries to prevent ERR_INSUFFICIENT_RESOURCES
+    onSuccess: (data) => {
+      toast.success('Attestation found!');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Attestation not found');
+    },
   });
 
   useEffect(() => {
