@@ -82,16 +82,19 @@ const COMMON_SCHEMAS = [
     uid: ENV.SCHEMA_UID,
     name: 'Polyseal Schema',
     description: 'Default Polyseal attestation schema',
+    schemaString: 'bool isFriend', // Hardcoded since registry lookup fails
   },
   {
     uid: '0x93f80b4674cbd9f74ddbd3cf593f463dd3a87cd9f002e5fe2a8048ef2d5eaa5a',
     name: 'Identity Verification',
     description: 'Schema for identity verification attestations',
+    schemaString: 'string name,address wallet',
   },
   {
     uid: '0x3eb39e89d37aa75c64380bdf3b66c245b1e0aae23cb2d2599bcb17f218cb68ee',
     name: 'Credential',
     description: 'Schema for educational or professional credentials',
+    schemaString: 'string credentialType,string issuer,uint256 issueDate',
   },
 ];
 
@@ -178,14 +181,26 @@ export default function Issue() {
 
   // Update selectedSchema when data loads
   useEffect(() => {
-    if (schemaData && selectedSchemaUid) {
+    if (selectedSchemaUid) {
       const commonSchema = COMMON_SCHEMAS.find((s) => s.uid === selectedSchemaUid);
-      setSelectedSchema({
-        uid: selectedSchemaUid as `0x${string}`,
-        name: commonSchema?.name || 'Custom Schema',
-        schemaString: schemaData.schema || '',
-        revocable: schemaData.revocable || false,
-      });
+
+      if (commonSchema) {
+        // Use hardcoded schema string first, fallback to API data
+        setSelectedSchema({
+          uid: selectedSchemaUid as `0x${string}`,
+          name: commonSchema.name,
+          schemaString: commonSchema.schemaString || schemaData?.schema || '',
+          revocable: schemaData?.revocable ?? true,
+        });
+      } else if (schemaData) {
+        // For custom schemas not in COMMON_SCHEMAS
+        setSelectedSchema({
+          uid: selectedSchemaUid as `0x${string}`,
+          name: 'Custom Schema',
+          schemaString: schemaData.schema || '',
+          revocable: schemaData.revocable || false,
+        });
+      }
     }
   }, [schemaData, selectedSchemaUid]);
 
