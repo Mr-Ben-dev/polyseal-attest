@@ -4,16 +4,27 @@ import { ENV } from '@/lib/env';
 import SEO from '@/ui/SEO';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { AlertCircle, CheckCircle, ExternalLink, Loader2, Search } from 'lucide-react';
+import { AlertCircle, CheckCircle, ExternalLink, Loader2, Search, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Attestations() {
   const [searchParams] = useSearchParams();
   const [uid, setUid] = useState('');
+  const [demoData, setDemoData] = useState<{
+    count: number;
+    attestations: unknown[];
+    message: string;
+    schemas?: unknown[];
+  } | null>(null);
 
   // Fetch schema definition
-  const { data: schemaData, isLoading: schemaLoading, error: schemaError } = useQuery({
+  const {
+    data: schemaData,
+    isLoading: schemaLoading,
+    error: schemaError,
+  } = useQuery({
     queryKey: ['schema', ENV.SCHEMA_UID],
     queryFn: async () => {
       const result = await getSchemaByUid(ENV.REGISTRY, ENV.SCHEMA_UID);
@@ -21,23 +32,58 @@ export default function Attestations() {
     },
   });
 
+  // Generate demo data mutation
+  const generateDemo = useMutation({
+    mutationFn: async () => {
+      analytics.lookupAttestation('demo-generation');
+
+      const response = await fetch('/api/seed-demo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ count: 100 }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      analytics.lookupSuccess('demo-generation');
+      return data;
+    },
+    onSuccess: (data) => {
+      setDemoData(data);
+      toast.success(`Successfully generated ${data.count} demo attestations!`);
+    },
+    onError: (error) => {
+      toast.error('Failed to generate demo data');
+      captureError(error instanceof Error ? error : new Error('Demo generation failed'));
+    },
+  });
+
   // Lookup attestation mutation
   const lookup = useMutation({
     mutationFn: async (attestationUid: string) => {
       analytics.lookupAttestation(attestationUid);
-      
+
       // Check if this is a demo-only UID that shouldn't hit the API
-      const isDemoUID = attestationUid === 'demo-invalid-format' || 
-                        attestationUid.length < 66 || 
-                        attestationUid === '0x0000000000000000000000000000000000000000000000000000000000000000';
-      
+      const isDemoUID =
+        attestationUid === 'demo-invalid-format' ||
+        attestationUid.length < 66 ||
+        attestationUid === '0x0000000000000000000000000000000000000000000000000000000000000000';
+
       if (isDemoUID) {
         // Simulate API response for demo UIDs
-        const error = new Error(`Demo UID "${attestationUid}" - This is for demonstration purposes only. In production, this would query the blockchain.`);
+        const error = new Error(
+          `Demo UID "${attestationUid}" - This is for demonstration purposes only. In production, this would query the blockchain.`
+        );
         analytics.lookupError(attestationUid, error.message);
         throw error;
       }
-      
+
       try {
         const response = await fetch(`/api/eas/${encodeURIComponent(attestationUid)}`, {
           method: 'GET',
@@ -45,30 +91,30 @@ export default function Attestations() {
             'Content-Type': 'application/json',
           },
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           const error = new Error(errorData.error || `HTTP ${response.status}`);
           analytics.lookupError(attestationUid, error.message);
           throw error;
         }
-        
+
         const data = await response.json();
-        
+
         // Check if we got valid attestation data
         if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
           const error = new Error('No attestation data found');
           analytics.lookupError(attestationUid, error.message);
           throw error;
         }
-        
+
         analytics.lookupSuccess(attestationUid);
         return data;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         analytics.lookupError(attestationUid, errorMessage);
-        captureError(error instanceof Error ? error : new Error(errorMessage), { 
-          uid: attestationUid.slice(0, 10) + '...'
+        captureError(error instanceof Error ? error : new Error(errorMessage), {
+          uid: attestationUid.slice(0, 10) + '...',
         });
         throw error;
       }
@@ -77,7 +123,7 @@ export default function Attestations() {
 
   useEffect(() => {
     analytics.viewAttestations();
-    
+
     // Check for pre-filled UID from URL parameters
     const urlUid = searchParams.get('uid');
     if (urlUid) {
@@ -97,7 +143,7 @@ export default function Attestations() {
   return (
     <>
       <SEO title="EAS Tools — Polyseal" path="/attestations" />
-      
+
       <div className="container py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -105,9 +151,31 @@ export default function Attestations() {
           className="max-w-4xl mx-auto"
         >
           <h1 className="mb-4">EAS Attestation Tools</h1>
-          <p className="text-xl text-muted-foreground mb-12">
-            Decode schemas and lookup attestations on Polygon Amoy. All data is verified on-chain through the EAS protocol.
+          <p className="text-xl text-muted-foreground mb-8">
+            Decode schemas and lookup attestations on Polygon Amoy. All data is verified on-chain
+            through the EAS protocol.
           </p>
+
+          {/* Try Demo Button */}
+          <div className="mb-8">
+            <button
+              onClick={() => generateDemo.mutate()}
+              disabled={generateDemo.isPending}
+              className="btn btn-primary flex items-center gap-2 mx-auto"
+            >
+              {generateDemo.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Generating Demo Data...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Try Demo (Generate 100 Attestations)
+                </>
+              )}
+            </button>
+          </div>
         </motion.div>
 
         {/* Schema Information */}
@@ -136,21 +204,21 @@ export default function Attestations() {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
-                
+
                 {schemaLoading && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Loading schema definition...</span>
                   </div>
                 )}
-                
+
                 {schemaError && (
                   <div className="flex items-center gap-2 text-destructive">
                     <AlertCircle className="w-4 h-4" />
                     <span>Could not load schema. Check network or UID.</span>
                   </div>
                 )}
-                
+
                 {schemaData && (
                   <div className="mt-3">
                     <span className="text-muted-foreground block mb-1">Schema Definition:</span>
@@ -224,7 +292,8 @@ export default function Attestations() {
               <div>
                 <p className="font-medium text-destructive">Attestation Not Found</p>
                 <p className="text-sm text-destructive/80 mt-1">
-                  Unable to fetch attestation. Please verify the UID and ensure you're connected to Polygon Amoy.
+                  Unable to fetch attestation. Please verify the UID and ensure you're connected to
+                  Polygon Amoy.
                 </p>
               </div>
             </div>
@@ -242,6 +311,50 @@ export default function Attestations() {
             </div>
           )}
         </motion.div>
+
+        {/* Demo Data Display */}
+        {demoData && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="glass-card p-6 max-w-4xl mx-auto mt-8"
+          >
+            <div className="flex items-start gap-3 mb-6">
+              <Sparkles className="w-6 h-6 text-primary mt-1" />
+              <div className="flex-1">
+                <h2 className="text-xl font-bold mb-2">Demo Data Generated</h2>
+                <p className="text-sm text-muted-foreground">{demoData.message}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm font-medium mb-2">Schemas Used:</p>
+                <div className="space-y-2">
+                  {demoData.schemas?.map(
+                    (schema: { uid: string; name: string; schema: string }) => (
+                      <div key={schema.uid} className="text-xs">
+                        <span className="font-mono text-primary">{schema.name}</span>
+                        <br />
+                        <span className="text-muted-foreground">{schema.schema}</span>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              <details className="group">
+                <summary className="cursor-pointer text-sm font-medium p-3 bg-muted rounded-xl hover:bg-muted/80 transition-colors">
+                  View Sample Attestations ({demoData.count} total)
+                </summary>
+                <pre className="mt-2 p-4 bg-muted rounded-xl text-xs overflow-x-auto max-h-96">
+                  {JSON.stringify(demoData.attestations.slice(0, 10), null, 2)}
+                </pre>
+              </details>
+            </div>
+          </motion.div>
+        )}
       </div>
     </>
   );

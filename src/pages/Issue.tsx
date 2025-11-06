@@ -1,25 +1,34 @@
+import SchemaFormGenerator from '@/components/SchemaFormGenerator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { getSchemaByUid } from '@/lib/eas';
 import { ENV } from '@/lib/env';
 import SEO from '@/ui/SEO';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-    AlertCircle,
-    AlertTriangle,
-    CheckCircle,
-    Copy,
-    ExternalLink,
-    FileText,
-    Loader2,
-    Wallet
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Copy,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Wallet,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { polygonAmoy } from 'wagmi/chains';
@@ -55,59 +64,106 @@ const EAS_ABI = [
   },
 ] as const;
 
+// Common schemas on Polygon Amoy for demo
+const COMMON_SCHEMAS = [
+  {
+    uid: ENV.SCHEMA_UID,
+    name: 'Polyseal Schema',
+    description: 'Default Polyseal attestation schema',
+  },
+  {
+    uid: '0x93f80b4674cbd9f74ddbd3cf593f463dd3a87cd9f002e5fe2a8048ef2d5eaa5a',
+    name: 'Identity Verification',
+    description: 'Schema for identity verification attestations',
+  },
+  {
+    uid: '0x3eb39e89d37aa75c64380bdf3b66c245b1e0aae23cb2d2599bcb17f218cb68ee',
+    name: 'Credential',
+    description: 'Schema for educational or professional credentials',
+  },
+];
+
 interface AttestationFormData {
   recipient: string;
-  data: string;
   expirationTime: string;
+  revocable: boolean;
+}
+
+interface SelectedSchema {
+  uid: `0x${string}`;
+  name: string;
+  schemaString: string;
   revocable: boolean;
 }
 
 export default function Issue() {
   const { address, isConnected, chainId } = useAccount();
+  const [selectedSchemaUid, setSelectedSchemaUid] = useState<string>(ENV.SCHEMA_UID);
+  const [selectedSchema, setSelectedSchema] = useState<SelectedSchema | null>(null);
   const [formData, setFormData] = useState<AttestationFormData>({
     recipient: '',
-    data: '',
     expirationTime: '',
     revocable: true,
   });
   const [demoEnabled, setDemoEnabled] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { writeContract, data: hash, error: writeError, isPending } = useWriteContract();
-  
+
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
 
+  // Fetch selected schema details
+  const { data: schemaData, isLoading: schemaLoading } = useQuery({
+    queryKey: ['schema', selectedSchemaUid],
+    queryFn: async () => {
+      const result = await getSchemaByUid(ENV.REGISTRY, selectedSchemaUid as `0x${string}`);
+      return result;
+    },
+    enabled: !!selectedSchemaUid,
+  });
+
+  // Update selectedSchema when data loads
+  useEffect(() => {
+    if (schemaData && selectedSchemaUid) {
+      const commonSchema = COMMON_SCHEMAS.find((s) => s.uid === selectedSchemaUid);
+      setSelectedSchema({
+        uid: selectedSchemaUid as `0x${string}`,
+        name: commonSchema?.name || 'Custom Schema',
+        schemaString: schemaData.schema || '',
+        revocable: schemaData.revocable || false,
+      });
+    }
+  }, [schemaData, selectedSchemaUid]);
+
   const isWrongNetwork = isConnected && chainId !== ENV.CHAIN_ID;
-  const canSubmit = isConnected && !isWrongNetwork && demoEnabled && formData.recipient && formData.data;
+  const canSubmit =
+    isConnected && !isWrongNetwork && demoEnabled && formData.recipient && selectedSchema;
 
   const handleInputChange = (field: keyof AttestationFormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit) return;
+  const handleSchemaFormSubmit = async (
+    encodedData: `0x${string}`,
+    formValues: Record<string, unknown>
+  ) => {
+    if (!canSubmit || !selectedSchema) return;
 
-    setIsSubmitting(true);
-    
     try {
       // Parse expiration time (0 means no expiration)
-      const expirationTime = formData.expirationTime 
+      const expirationTime = formData.expirationTime
         ? Math.floor(new Date(formData.expirationTime).getTime() / 1000)
         : 0;
 
-      // Encode the data as bytes (simple string to hex conversion for demo)
-      const encodedData = `0x${Buffer.from(formData.data, 'utf8').toString('hex')}` as `0x${string}`;
-
       const attestationRequest = {
-        schema: ENV.SCHEMA_UID,
+        schema: selectedSchema.uid,
         data: {
           recipient: formData.recipient as `0x${string}`,
           expirationTime: BigInt(expirationTime),
           revocable: formData.revocable,
-          refUID: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
+          refUID:
+            '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
           data: encodedData,
           value: 0n,
         },
@@ -122,11 +178,10 @@ export default function Issue() {
         account: address,
       });
 
+      toast.success('Transaction submitted!');
     } catch (error) {
       console.error('Error submitting attestation:', error);
       toast.error('Failed to submit attestation');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -135,12 +190,23 @@ export default function Issue() {
     toast.success('Copied to clipboard!');
   };
 
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      recipient: '',
+      expirationTime: '',
+      revocable: true,
+    });
+    setDemoEnabled(false);
+    setSelectedSchemaUid(ENV.SCHEMA_UID);
+  };
+
   // Success state
   if (isConfirmed && hash) {
     return (
       <>
         <SEO title="Attestation Created — Polyseal" path="/issue" />
-        
+
         <div className="container py-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -152,7 +218,7 @@ export default function Issue() {
             <p className="text-muted-foreground mb-8">
               Your attestation has been successfully submitted to the blockchain.
             </p>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Transaction Details</CardTitle>
@@ -161,48 +227,28 @@ export default function Issue() {
                 <div className="flex items-center justify-between p-3 bg-muted rounded">
                   <span className="text-sm font-medium">Transaction Hash:</span>
                   <div className="flex items-center gap-2">
-                    <code className="text-xs">{hash.slice(0, 10)}...{hash.slice(-8)}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyToClipboard(hash)}
-                    >
+                    <code className="text-xs">
+                      {hash.slice(0, 10)}...{hash.slice(-8)}
+                    </code>
+                    <Button variant="ghost" size="sm" onClick={() => copyToClipboard(hash)}>
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-3">
                   <Button asChild className="flex-1">
-                    <a href={`/attestations?uid=${hash}`}>
-                      View Attestation
-                    </a>
+                    <a href={`/attestations?uid=${hash}`}>View Attestation</a>
                   </Button>
                   <Button asChild variant="outline">
-                    <a 
-                      href={`${ENV.SCANNER}/tx/${hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a href={`${ENV.SCANNER}/tx/${hash}`} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="w-4 h-4 mr-2" />
                       PolygonScan
                     </a>
                   </Button>
                 </div>
-                
-                <Button 
-                  variant="ghost" 
-                  onClick={() => {
-                    setFormData({
-                      recipient: '',
-                      data: '',
-                      expirationTime: '',
-                      revocable: true,
-                    });
-                    setDemoEnabled(false);
-                  }}
-                  className="w-full"
-                >
+
+                <Button variant="ghost" onClick={resetForm} className="w-full">
                   Create Another Attestation
                 </Button>
               </CardContent>
@@ -216,7 +262,7 @@ export default function Issue() {
   return (
     <>
       <SEO title="Issue Attestation — Polyseal" path="/issue" />
-      
+
       <div className="container py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -226,7 +272,7 @@ export default function Issue() {
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold mb-4">Issue Attestation</h1>
             <p className="text-xl text-muted-foreground">
-              Create a new attestation on the Polyseal schema (Polygon Amoy testnet).
+              Create a new attestation on Polygon Amoy testnet using EAS schemas.
             </p>
           </div>
 
@@ -245,19 +291,24 @@ export default function Issue() {
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Please switch to Polygon Amoy testnet (Chain ID: {ENV.CHAIN_ID}) to create attestations.
+                Please switch to Polygon Amoy testnet (Chain ID: {ENV.CHAIN_ID}) to create
+                attestations.
               </AlertDescription>
             </Alert>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-6">
               {/* Demo Warning */}
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="flex items-center justify-between">
-                    <span>This is a demo feature that writes to Polygon Amoy testnet. Gas fees required.</span>
+                    <span>
+                      This is a demo feature that writes to Polygon Amoy testnet. Gas fees required.
+                    </span>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="demo-toggle" className="text-sm">Enable Demo</Label>
+                      <Label htmlFor="demo-toggle" className="text-sm">
+                        Enable Demo
+                      </Label>
                       <Switch
                         id="demo-toggle"
                         checked={demoEnabled}
@@ -268,42 +319,89 @@ export default function Issue() {
                 </AlertDescription>
               </Alert>
 
-              {/* Schema Info */}
+              {/* Schema Selector */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5" />
-                    Polyseal Schema
+                    Select Schema
                   </CardTitle>
                   <CardDescription>
-                    Attestations will be created using the Polyseal schema on EAS.
+                    Choose an EAS schema to structure your attestation data.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between p-3 bg-muted rounded">
-                    <span className="text-sm font-medium">Schema UID:</span>
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs">{ENV.SCHEMA_UID.slice(0, 10)}...{ENV.SCHEMA_UID.slice(-8)}</code>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(ENV.SCHEMA_UID)}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="schema-select">Schema</Label>
+                    <Select
+                      value={selectedSchemaUid}
+                      onValueChange={setSelectedSchemaUid}
+                      disabled={!demoEnabled}
+                    >
+                      <SelectTrigger id="schema-select">
+                        <SelectValue placeholder="Select a schema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMON_SCHEMAS.map((schema) => (
+                          <SelectItem key={schema.uid} value={schema.uid}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{schema.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {schema.description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {schemaLoading && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Loading schema definition...</span>
+                    </div>
+                  )}
+
+                  {selectedSchema && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded">
+                        <span className="text-sm font-medium">Schema UID:</span>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs">
+                            {selectedSchema.uid.slice(0, 10)}...{selectedSchema.uid.slice(-8)}
+                          </code>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(selectedSchema.uid)}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {selectedSchema.schemaString && (
+                        <div>
+                          <span className="text-sm text-muted-foreground block mb-1">
+                            Schema Definition:
+                          </span>
+                          <code className="block px-3 py-2 bg-muted rounded text-xs break-all">
+                            {selectedSchema.schemaString}
+                          </code>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Form Fields */}
+              {/* Attestation Metadata */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Attestation Details</CardTitle>
-                  <CardDescription>
-                    Fill in the attestation information below.
-                  </CardDescription>
+                  <CardTitle>Attestation Metadata</CardTitle>
+                  <CardDescription>Configure recipient and attestation properties.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -314,18 +412,6 @@ export default function Issue() {
                       placeholder="0x..."
                       value={formData.recipient}
                       onChange={(e) => handleInputChange('recipient', e.target.value)}
-                      disabled={!demoEnabled}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="data">Attestation Data</Label>
-                    <Textarea
-                      id="data"
-                      placeholder="Enter the attestation data (will be encoded as bytes)"
-                      rows={4}
-                      value={formData.data}
-                      onChange={(e) => handleInputChange('data', e.target.value)}
                       disabled={!demoEnabled}
                     />
                   </div>
@@ -353,44 +439,43 @@ export default function Issue() {
                 </CardContent>
               </Card>
 
-              {/* Submit Button */}
-              <Card>
-                <CardContent className="pt-6">
-                  {writeError && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Error: {writeError.message}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={!canSubmit || isPending || isConfirming}
-                  >
-                    {isPending || isConfirming ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {isPending ? 'Submitting...' : 'Confirming...'}
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="w-4 h-4 mr-2" />
-                        Create Attestation
-                      </>
+              {/* Dynamic Schema Form */}
+              {selectedSchema && selectedSchema.schemaString && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Attestation Data</CardTitle>
+                    <CardDescription>Fill in the schema-specific fields below.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {writeError && (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>Error: {writeError.message}</AlertDescription>
+                      </Alert>
                     )}
-                  </Button>
-                  
-                  {!demoEnabled && (
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Enable demo mode to create attestations
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </form>
+
+                    <SchemaFormGenerator
+                      schemaString={selectedSchema.schemaString}
+                      onSubmit={handleSchemaFormSubmit}
+                      disabled={!canSubmit || isPending || isConfirming}
+                      submitLabel={
+                        isPending || isConfirming
+                          ? isPending
+                            ? 'Submitting...'
+                            : 'Confirming...'
+                          : 'Create Attestation'
+                      }
+                    />
+
+                    {!demoEnabled && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Enable demo mode to create attestations
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </motion.div>
       </div>
