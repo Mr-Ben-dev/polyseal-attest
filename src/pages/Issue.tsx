@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { decodeEventLog } from 'viem';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { polygonAmoy } from 'wagmi/chains';
 
@@ -148,8 +149,11 @@ export default function Issue() {
           topics: attestedLog.topics,
         });
 
-        if (decoded && 'uid' in decoded.args) {
-          attestationUid = decoded.args.uid as `0x${string}`;
+        if (decoded && typeof decoded === 'object' && 'args' in decoded) {
+          const args = decoded.args as { uid?: `0x${string}` };
+          if (args.uid) {
+            attestationUid = args.uid;
+          }
         }
       }
     } catch (error) {
