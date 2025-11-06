@@ -134,9 +134,10 @@ export default function Issue() {
 
   // Extract attestation UID from transaction receipt
   // The UID is in the event data, not topics (it's not indexed)
-  let attestationUid: `0x${string}` | undefined = hash;
+  let attestationUid: `0x${string}` | undefined = undefined;
 
-  if (receipt?.logs?.[0]) {
+  if (receipt?.logs && receipt.logs.length > 0) {
+    console.log('📋 Receipt received with', receipt.logs.length, 'logs');
     try {
       // Find the Attested event log
       const attestedLog = receipt.logs.find(
@@ -144,7 +145,15 @@ export default function Issue() {
           log.topics[0] === '0x8bf46bf4cfd674fa735a3d63ec1c9ad4153f033c290341f3a588b75685141b35' // Attested event signature
       );
 
+      console.log('🔍 Looking for Attested event...', attestedLog ? 'FOUND' : 'NOT FOUND');
+
       if (attestedLog) {
+        console.log('📝 Attested log:', {
+          address: attestedLog.address,
+          topics: attestedLog.topics,
+          data: attestedLog.data,
+        });
+
         // Decode the non-indexed data (uid is the 3rd parameter, not indexed)
         const decoded = decodeEventLog({
           abi: EAS_ABI,
@@ -152,22 +161,39 @@ export default function Issue() {
           topics: attestedLog.topics,
         });
 
+        console.log('🔓 Decoded event:', decoded);
+
         if (decoded && typeof decoded === 'object' && 'args' in decoded) {
           const args = decoded.args as { uid?: `0x${string}` };
           if (args.uid) {
             attestationUid = args.uid;
             console.log('✅ Extracted attestation UID:', attestationUid);
+          } else {
+            console.error('❌ UID not found in decoded args:', args);
           }
         }
       } else {
         console.warn('⚠️ Attested event not found in receipt logs');
+        console.log(
+          'All log topics:',
+          receipt.logs.map((l) => l.topics[0])
+        );
       }
     } catch (error) {
       console.error('Failed to extract attestation UID:', error);
     }
+  } else {
+    console.log('⏳ Waiting for receipt...');
   }
 
-  console.log('Final attestation UID:', attestationUid, 'Transaction hash:', hash);
+  console.log('📊 State:', {
+    hash,
+    isConfirming,
+    isConfirmed,
+    attestationUid,
+    hasReceipt: !!receipt,
+    logsCount: receipt?.logs?.length || 0,
+  });
 
   // Fetch selected schema details
   const { data: schemaData, isLoading: schemaLoading } = useQuery({
@@ -269,8 +295,57 @@ export default function Issue() {
     setSelectedSchemaUid(ENV.SCHEMA_UID);
   };
 
+  // Show transaction confirming state
+  if (hash && isConfirming) {
+    return (
+      <>
+        <SEO title="Confirming Transaction — Polyseal" path="/issue" />
+
+        <div className="container py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <Loader2 className="w-16 h-16 text-primary mx-auto mb-6 animate-spin" />
+            <h1 className="text-3xl font-bold mb-4">Confirming Transaction...</h1>
+            <p className="text-muted-foreground mb-8">
+              Please wait while your attestation is being confirmed on the blockchain.
+            </p>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Transaction Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-muted rounded">
+                  <span className="text-sm font-medium">Transaction Hash:</span>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs">
+                      {hash.slice(0, 10)}...{hash.slice(-8)}
+                    </code>
+                    <Button variant="ghost" size="sm" onClick={() => copyToClipboard(hash)}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <Button asChild variant="outline" className="w-full">
+                  <a href={`${ENV.SCANNER}/tx/${hash}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View on PolygonScan
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </>
+    );
+  }
+
   // Success state
-  if (isConfirmed && hash) {
+  if (isConfirmed && hash && attestationUid) {
     return (
       <>
         <SEO title="Attestation Created — Polyseal" path="/issue" />
