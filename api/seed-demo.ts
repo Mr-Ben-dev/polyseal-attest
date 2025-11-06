@@ -132,7 +132,7 @@ const SCHEMAS = [
     name: 'Reputation Score',
     schema: 'address user, uint256 score, string category, uint256 lastUpdated',
     generator: () => {
-      const user = `0x${Math.random().toString(16).substr(2, 40)}`;
+      const user = `0x${Math.random().toString(16).substring(2, 42)}`;
       const score = BigInt(Math.floor(Math.random() * 1000));
       const category = ['Developer', 'Contributor', 'Reviewer', 'Mentor', 'Community Leader'][
         Math.floor(Math.random() * 5)
@@ -145,7 +145,7 @@ const SCHEMAS = [
 
 // Generate random wallet address
 function randomAddress(): string {
-  return `0x${Math.random().toString(16).substr(2, 40)}`;
+  return `0x${Math.random().toString(16).substring(2, 42)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -158,47 +158,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { count = 100 } = req.body;
+    const { count = 100 } = req.body || {};
     const maxCount = 150; // Limit to prevent abuse
     const actualCount = Math.min(count, maxCount);
 
     const demoAttestations = [];
 
     for (let i = 0; i < actualCount; i++) {
-      // Randomly select a schema
-      const schemaTemplate = SCHEMAS[Math.floor(Math.random() * SCHEMAS.length)];
+      try {
+        // Randomly select a schema
+        const schemaTemplate = SCHEMAS[Math.floor(Math.random() * SCHEMAS.length)];
 
-      // Generate data for the schema
-      const data = schemaTemplate.generator();
+        // Generate data for the schema
+        const data = schemaTemplate.generator();
 
-      // Encode the data
-      const abiParams = parseAbiParameters(schemaTemplate.schema);
-      const values = Object.values(data);
+        // Encode the data
+        const abiParams = parseAbiParameters(schemaTemplate.schema);
+        const values = Object.values(data);
 
-      // Type assertion for viem - it needs the values as readonly array
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const encodedData = encodeAbiParameters(abiParams, values as any);
+        // Type assertion for viem - it needs the values as readonly array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const encodedData = encodeAbiParameters(abiParams, values as any);
 
-      // Create attestation object
-      const attestation = {
-        uid: `0x${Math.random().toString(16).substr(2, 64)}`, // Fake UID for demo
-        schema: schemaTemplate.uid,
-        schemaName: schemaTemplate.name,
-        recipient: randomAddress(),
-        attester: randomAddress(),
-        time: Date.now() - Math.floor(Math.random() * 180 * 24 * 60 * 60 * 1000), // Within last 6 months
-        expirationTime: 0, // No expiration
-        revocationTime:
-          Math.random() > 0.9
-            ? Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)
-            : 0, // 10% revoked
-        revocable: true,
-        refUID: '0x0000000000000000000000000000000000000000000000000000000000000000',
-        data: encodedData,
-        decodedData: data,
-      };
+        // Create attestation object
+        const attestation = {
+          uid: `0x${Math.random().toString(16).substring(2, 66)}`, // Fake UID for demo
+          schema: schemaTemplate.uid,
+          schemaName: schemaTemplate.name,
+          recipient: randomAddress(),
+          attester: randomAddress(),
+          time: Date.now() - Math.floor(Math.random() * 180 * 24 * 60 * 60 * 1000), // Within last 6 months
+          expirationTime: 0, // No expiration
+          revocationTime:
+            Math.random() > 0.9
+              ? Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)
+              : 0, // 10% revoked
+          revocable: true,
+          refUID: '0x0000000000000000000000000000000000000000000000000000000000000000',
+          data: encodedData,
+          decodedData: data,
+        };
 
-      demoAttestations.push(attestation);
+        demoAttestations.push(attestation);
+      } catch (itemError) {
+        console.error(`Error generating attestation ${i}:`, itemError);
+        // Continue with next attestation
+      }
     }
 
     return res.status(200).json({
