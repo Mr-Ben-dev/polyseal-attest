@@ -5,7 +5,7 @@ import SEO from '@/ui/SEO';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertCircle, CheckCircle, ExternalLink, Loader2, Search, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -18,6 +18,7 @@ export default function Attestations() {
     message: string;
     schemas?: unknown[];
   } | null>(null);
+  const hasAutoLookedUp = useRef(false);
 
   // Fetch schema definition
   const {
@@ -69,10 +70,18 @@ export default function Attestations() {
     mutationFn: async (attestationUid: string) => {
       analytics.lookupAttestation(attestationUid);
 
+      // Validate UID format
+      if (!attestationUid || !attestationUid.startsWith('0x') || attestationUid.length !== 66) {
+        const error = new Error(
+          'Invalid attestation UID format. Must be a 66-character hex string starting with 0x'
+        );
+        analytics.lookupError(attestationUid, error.message);
+        throw error;
+      }
+
       // Check if this is a demo-only UID that shouldn't hit the API
       const isDemoUID =
         attestationUid === 'demo-invalid-format' ||
-        attestationUid.length < 66 ||
         attestationUid === '0x0000000000000000000000000000000000000000000000000000000000000000';
 
       if (isDemoUID) {
@@ -130,19 +139,22 @@ export default function Attestations() {
 
   useEffect(() => {
     analytics.viewAttestations();
+  }, []);
 
-    // Check for pre-filled UID from URL parameters
+  useEffect(() => {
+    // Check for pre-filled UID from URL parameters - only run once
     const urlUid = searchParams.get('uid');
-    if (urlUid) {
+    if (urlUid && !hasAutoLookedUp.current) {
+      hasAutoLookedUp.current = true;
       setUid(urlUid);
       // Automatically trigger lookup for provided UIDs
       lookup.mutate(urlUid);
     }
-  }, [searchParams, lookup]);
+  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (uid.trim()) {
+    if (uid.trim() && !lookup.isPending) {
       lookup.mutate(uid.trim());
     }
   };
