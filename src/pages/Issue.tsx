@@ -129,7 +129,33 @@ export default function Issue() {
   });
 
   // Extract attestation UID from transaction receipt
-  const attestationUid = receipt?.logs?.[0]?.topics?.[3] || hash;
+  // The UID is in the event data, not topics (it's not indexed)
+  let attestationUid: `0x${string}` | undefined = hash;
+
+  if (receipt?.logs?.[0]) {
+    try {
+      // Find the Attested event log
+      const attestedLog = receipt.logs.find(
+        (log) =>
+          log.topics[0] === '0x8bf46bf4cfd674fa735a3d63ec1c9ad4153f033c290341f3a588b75685141b35' // Attested event signature
+      );
+
+      if (attestedLog) {
+        // Decode the non-indexed data (uid is the 3rd parameter, not indexed)
+        const decoded = decodeEventLog({
+          abi: EAS_ABI,
+          data: attestedLog.data,
+          topics: attestedLog.topics,
+        });
+
+        if (decoded && 'uid' in decoded.args) {
+          attestationUid = decoded.args.uid as `0x${string}`;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to extract attestation UID:', error);
+    }
+  }
 
   // Fetch selected schema details
   const { data: schemaData, isLoading: schemaLoading } = useQuery({
