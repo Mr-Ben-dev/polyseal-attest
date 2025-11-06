@@ -153,13 +153,18 @@ export default function Issue() {
           const args = decoded.args as { uid?: `0x${string}` };
           if (args.uid) {
             attestationUid = args.uid;
+            console.log('✅ Extracted attestation UID:', attestationUid);
           }
         }
+      } else {
+        console.warn('⚠️ Attested event not found in receipt logs');
       }
     } catch (error) {
       console.error('Failed to extract attestation UID:', error);
     }
   }
+
+  console.log('Final attestation UID:', attestationUid, 'Transaction hash:', hash);
 
   // Fetch selected schema details
   const { data: schemaData, isLoading: schemaLoading } = useQuery({
