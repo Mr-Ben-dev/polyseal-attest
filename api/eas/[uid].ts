@@ -31,7 +31,8 @@ const abi = [
   },
 ] as const;
 
-const eas = (process.env.EAS_CONTRACT_ADDRESS || '0xb101275a60d8bfb14529C421899aD7CA1Ae5B5Fc') as `0x${string}`;
+const eas = (process.env.EAS_CONTRACT_ADDRESS ||
+  '0xb101275a60d8bfb14529C421899aD7CA1Ae5B5Fc') as `0x${string}`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (cors(req, res) || rate(req, res)) return;
@@ -54,14 +55,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       args: [uid as `0x${string}`],
     });
 
+    // Check if attestation exists (time would be 0 if not found)
+    if (typeof data === 'object' && data !== null && 'time' in data) {
+      const attestation = data as { time: bigint; [key: string]: unknown };
+      if (attestation.time === BigInt(0)) {
+        return res.status(404).json({ error: 'attestation_not_found' });
+      }
+    }
+
     // Convert BigInt values to strings for JSON serialization
-    const serializedData = JSON.parse(JSON.stringify(data, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    ));
+    const serializedData = JSON.parse(
+      JSON.stringify(data, (key, value) => (typeof value === 'bigint' ? value.toString() : value))
+    );
 
     res.status(200).json(serializedData);
   } catch (error) {
     console.error('EAS lookup error:', error);
-    res.status(404).json({ error: 'attestation_not_found' });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      error: 'internal_server_error',
+      message: errorMessage,
+    });
   }
 }
