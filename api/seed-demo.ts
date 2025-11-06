@@ -174,7 +174,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Encode the data
       const abiParams = parseAbiParameters(schemaTemplate.schema);
       const values = Object.values(data);
-      const encodedData = encodeAbiParameters(abiParams, values);
+
+      // Type assertion for viem - it needs the values as readonly array
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const encodedData = encodeAbiParameters(abiParams, values as any);
 
       // Create attestation object
       const attestation = {
